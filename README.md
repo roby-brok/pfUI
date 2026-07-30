@@ -1,6 +1,62 @@
 # pfUI - Turtle WoW Edition
 
-[![Version](https://img.shields.io/badge/version-8.3.0-blue.svg)](https://github.com/me0wg4ming/pfUI)
+> ### About this fork
+>
+> pfUI is the work of **[Shagu](https://github.com/shagu/pfUI)** (Eric Mauser), released under the
+> MIT licence, and this branch descends from **me0wg4ming's** Turtle WoW edition. All the credit
+> belongs to them — this fork only adds the fixes listed below, on top of their work.
+>
+> Note that the upstream repository this was cloned from
+> (`github.com/me0wg4ming/pfUI`) is no longer reachable, which is part of why this copy exists.
+> The full original commit history is preserved here.
+>
+> Fork maintained by **Roby_Brok**. Version bumped to **9.0.0** to distinguish it.
+>
+> ---
+>
+> #### UI scale / resolution
+>
+> - **`GetPerfectPixel` measured against the wrong scale.** It read the `uiScale` cvar, which is
+>   capped at 1.0 — while the "Huge"/"Large" presets (1.42 / 1.14) and the first-run slider
+>   (0.5–2.0) push `UIParent` past that with `SetScale`, and the cvar is ignored entirely when
+>   `useUiScale` is off. It now asks `UIParent:GetEffectiveScale()`, which always reports what is
+>   really on screen. An unparseable `gxResolution` is also guarded (previously `768 / nil`, which
+>   killed every border on the UI).
+> - **`pixelperfect` loaded 55th, but sets the scale everything else is measured against.** That
+>   value is cached on first use, so every module loaded before it baked in the *previous* scale —
+>   the classic "reload twice before it looks right". It now loads first.
+> - The module only re-applies the scale when it actually changes, and drops the cached pixel and
+>   border sizes when it does.
+> - "Enable UI-Scale" now asks for a reload instead of applying live, since existing frames keep
+>   border sizes computed for the old scale.
+>
+> #### Features that silently did nothing
+>
+> pfUI runs each module inside a sandboxed environment that has `__index` but no `__newindex`, so
+> a bare global assignment inside a module never reaches `_G`. These all looked registered and
+> were not:
+>
+> | Where | What was dead |
+> |---|---|
+> | `modules/nampower.lua` | `/disenchantall`, `/dea` |
+> | `modules/superwow.lua` | `/clickthrough`, `/ct` |
+> | `modules/unitxp.lua` | `/pfunitxp`, and the battleground-pop notification |
+> | `modules/hdgraphic.lua` | `OptionsFrame_OnShow` — the extended world-detail slider never installed |
+> | `modules/raid.lua` | `GROUP_REPLACE_PARTY` |
+>
+> #### Other
+>
+> - `modules/loot.lua` — restored `local autoLoot = arg1`; `CloseLoot(not autoLoot)` was reading a
+>   nil global and always suppressing the server-side close notification.
+> - `api/ui-widgets.lua` — removed a dead fourth value in `SetHighlight`'s colour assignment.
+> - `init/skins.xml` — removed a duplicated block that loaded five Turtle WoW skins twice.
+> - Plus an earlier batch of fixes across the stutter-prone hot paths (nameplate debuff scanning,
+>   unit-frame aggro checks, throttle allocations, cooldown updates), a number of silently broken
+>   features, and a class-colour accent option.
+>
+> ---
+
+[![Version](https://img.shields.io/badge/version-9.0.0-blue.svg)](https://github.com/roby-brok/pfUI)
 [![Turtle WoW](https://img.shields.io/badge/Turtle%20WoW-1.18.0-brightgreen.svg)](https://turtlecraft.gg/)
 [![SuperWoW](https://img.shields.io/badge/SuperWoW-Optional-yellow.svg)](https://github.com/balakethelock/SuperWoW)
 [![Nampower](https://img.shields.io/badge/Nampower-Required-purple.svg)](https://gitea.com/avitasia/nampower)
