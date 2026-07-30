@@ -1,10 +1,15 @@
-# pfUI - Turtle WoW Edition
+# pfUI - OctoWoW Edition
 
 > ### About this fork
 >
+> **This fork is maintained for [OctoWoW](https://octowow.st).** Everything here was found and
+> fixed while running on that server; the fixes are not OctoWoW-specific and should apply to any
+> 1.12 client, but OctoWoW is the only place it has actually been tested.
+>
 > pfUI is the work of **[Shagu](https://github.com/shagu/pfUI)** (Eric Mauser), released under the
-> MIT licence, and this branch descends from **me0wg4ming's** Turtle WoW edition. All the credit
-> belongs to them — this fork only adds the fixes listed below, on top of their work.
+> MIT licence, and this branch descends from **me0wg4ming's** Turtle WoW edition — which is why
+> parts of the documentation below still refer to Turtle WoW. All the credit belongs to them; this
+> fork only adds the fixes listed here, on top of their work.
 >
 > Note that the upstream repository this was cloned from
 > (`github.com/me0wg4ming/pfUI`) is no longer reachable, which is part of why this copy exists.
@@ -57,12 +62,12 @@
 > ---
 
 [![Version](https://img.shields.io/badge/version-9.0.0-blue.svg)](https://github.com/roby-brok/pfUI)
-[![Turtle WoW](https://img.shields.io/badge/Turtle%20WoW-1.18.0-brightgreen.svg)](https://turtlecraft.gg/)
+[![OctoWoW](https://img.shields.io/badge/OctoWoW-supported-brightgreen.svg)](https://octowow.st)
 [![SuperWoW](https://img.shields.io/badge/SuperWoW-Optional-yellow.svg)](https://github.com/balakethelock/SuperWoW)
 [![Nampower](https://img.shields.io/badge/Nampower-Required-purple.svg)](https://gitea.com/avitasia/nampower)
 [![UnitXP](https://img.shields.io/badge/UnitXP__SP3-Optional-yellow.svg)](https://codeberg.org/konaka/UnitXP_SP3)
 
-**A pfUI fork specifically optimized for [Turtle WoW](https://turtlecraft.gg/) which requires Nampower with optional SuperWoW and UnitXP_SP3 DLL integration.**
+**A pfUI fork run and maintained on [OctoWoW](https://octowow.st), which requires Nampower with optional SuperWoW and UnitXP_SP3 DLL integration.** (Originally built by me0wg4ming for Turtle WoW; the sections below are their documentation.)
 
 This version includes significant performance improvements, DLL-enhanced features, and TBC spell indicators that work with Turtle WoW's expanded spell library.
 
