@@ -56,6 +56,17 @@ pfUI:RegisterModule("nameplates", "vanilla", function ()
     ["boss"] = "B"
   }
 
+  -- symbols drawn on both sides of the current target's nameplate ("> [plate] <")
+  local targetsymbols = {
+    ["arrow"]   = { ">",   "<"   },
+    ["arrow2"]  = { ">>",  "<<"  },
+    ["arrow3"]  = { ">>>", "<<<" },
+    ["bracket"] = { "[",   "]"   },
+    ["brace"]   = { "{",   "}"   },
+    ["star"]    = { "*",   "*"   },
+    ["dash"]    = { "-",   "-"   },
+  }
+
   -- catch all nameplates
   local childs = {}  -- PERF: Reuse table instead of creating new one each scan
   local regions, plate
@@ -126,6 +137,10 @@ pfUI:RegisterModule("nameplates", "vanilla", function ()
     cfg.showdebuffs_friendly = C.nameplates["showdebuffs_friendly"] == "1"
     cfg.targetzoom = C.nameplates.targetzoom == "1"
     cfg.zoomval = (tonumber(C.nameplates.targetzoomval) or 0.4) + 1
+    -- target plate symbols: nil when disabled
+    local symbols = targetsymbols[C.nameplates.targetsymbols or "off"]
+    cfg.symbolleft = symbols and symbols[1]
+    cfg.symbolright = symbols and symbols[2]
     cfg.width = tonumber(C.nameplates.width) or 120
     cfg.heighthealth = tonumber(C.nameplates.heighthealth) or 8
     cfg.targetglow = C.nameplates.targetglow == "1"
@@ -870,6 +885,15 @@ end
     nameplate.name = nameplate:CreateFontString(nil, "OVERLAY")
     nameplate.name:SetPoint("TOP", nameplate, "TOP", 0, 0)
 
+    -- target symbols, drawn left and right of the whole plate
+    nameplate.symbolleft = nameplate:CreateFontString(nil, "OVERLAY")
+    nameplate.symbolleft:SetTextColor(1,1,1,1)
+    nameplate.symbolleft:Hide()
+
+    nameplate.symbolright = nameplate:CreateFontString(nil, "OVERLAY")
+    nameplate.symbolright:SetTextColor(1,1,1,1)
+    nameplate.symbolright:Hide()
+
     nameplate.glow = nameplate:CreateTexture(nil, "BACKGROUND")
     nameplate.glow:SetPoint("CENTER", nameplate.health, "CENTER", 0, 0)
     nameplate.glow:SetTexture(pfUI.media["img:dot"])
@@ -1008,6 +1032,10 @@ end
     nameplate:SetPoint("TOP", parent, "TOP", 0, 0)
 
     nameplate.name:SetFont(font, font_size, font_style)
+
+    local symbolsize = floor(font_size * (tonumber(C.nameplates.targetsymbolsize) or 2))
+    nameplate.symbolleft:SetFont(font, symbolsize, font_style)
+    nameplate.symbolright:SetFont(font, symbolsize, font_style)
 
     nameplate.health:SetOrientation(orientation)
     nameplate.health:SetPoint("TOP", nameplate.name, "BOTTOM", 0, healthoffset)
@@ -1185,10 +1213,16 @@ end
       plate.health:Hide()
       plate.guild:Hide()
       plate.totem:Show()
+      plate.symbolleft:Hide()
+      plate.symbolright:Hide()
     elseif HidePlate(unittype, name, (hpmax-hp == hpmin), target) then
       plate.level:SetPoint("RIGHT", plate.name, "LEFT", -3, 0)
       plate.name:SetParent(plate)
       plate.guild:SetPoint("BOTTOM", plate.name, "BOTTOM", -2, -(font_size + 2))
+
+      -- no healthbar on this plate, frame the name instead
+      plate.symbolleft:SetPoint("RIGHT", plate.level, "LEFT", -4, 0)
+      plate.symbolright:SetPoint("LEFT", plate.name, "RIGHT", 4, 0)
 
       plate.level:Show()
       plate.name:Show()
@@ -1204,11 +1238,26 @@ end
       plate.name:SetParent(plate.health)
       plate.guild:SetPoint("BOTTOM", plate.health, "BOTTOM", 0, -(font_size + 4))
 
+      -- frame the whole plate: outside the level on the left, outside the bar on the right
+      plate.symbolleft:SetPoint("RIGHT", plate.level, "LEFT", -4, 0)
+      plate.symbolright:SetPoint("LEFT", plate.health, "RIGHT", 4, 0)
+
       plate.level:Show()
       plate.name:Show()
       plate.health:Show()
       plate.glow:SetPoint("CENTER", plate.health, "CENTER", 0, 0)
       plate.totem:Hide()
+    end
+
+    -- target symbols
+    if target and cfg.symbolleft and not TotemIcon then
+      plate.symbolleft:SetText(cfg.symbolleft)
+      plate.symbolright:SetText(cfg.symbolright)
+      plate.symbolleft:Show()
+      plate.symbolright:Show()
+    else
+      plate.symbolleft:Hide()
+      plate.symbolright:Hide()
     end
 
     plate.name:SetText(GetNameString(name))
