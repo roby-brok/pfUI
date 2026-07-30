@@ -1033,11 +1033,17 @@ end
 
     nameplate.name:SetFont(font, font_size, font_style)
 
-    -- Target symbols are fixed at 4x the nameplate font. Not exposed in the GUI: the
-    -- client clamps SetFont at large sizes, so anything past this point stops growing.
+    -- Target symbols. Text caps around 32px on this client and frame scale has no
+    -- effect on nameplates, so size is not a usable lever -- it stays at 4x, which is
+    -- deliberately past the cap. The levers that do work are the glyph itself (">"
+    -- fills only about half its em box, so a heavier face puts more ink in the same
+    -- capped size) and the outline: 1.12 has no BOLD flag, so weight has to come from
+    -- the font file or from THICKOUTLINE.
+    local symbolfont = C.nameplates.targetsymbolfont
+    symbolfont = symbolfont and pfUI.media[symbolfont] or font
     local symbolsize = floor(font_size * (tonumber(C.nameplates.targetsymbolsize) or 4))
-    nameplate.symbolleft:SetFont(font, symbolsize, font_style)
-    nameplate.symbolright:SetFont(font, symbolsize, font_style)
+    nameplate.symbolleft:SetFont(symbolfont, symbolsize, "THICKOUTLINE")
+    nameplate.symbolright:SetFont(symbolfont, symbolsize, "THICKOUTLINE")
 
     nameplate.health:SetOrientation(orientation)
     nameplate.health:SetPoint("TOP", nameplate.name, "BOTTOM", 0, healthoffset)
