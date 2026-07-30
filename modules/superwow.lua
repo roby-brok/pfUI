@@ -5,7 +5,7 @@
 SLASH_PFDLLSTATUS1 = "/pfdll"
 SlashCmdList["PFDLLSTATUS"] = function()
   local chat = DEFAULT_CHAT_FRAME
-  chat:AddMessage("|cff33ffccpfUI|r: DLL Status Check")
+  chat:AddMessage("|cff" .. (pfUI.chex or "33ffcc") .. "pfUI|r: DLL Status Check")
 
   -- SuperWoW
   if SUPERWOW_VERSION then
@@ -69,7 +69,8 @@ pfUI:RegisterModule("superwow", "vanilla", function ()
     DEFAULT_CHAT_FRAME:AddMessage("-> https://github.com/balakethelock/SuperWoW/releases/")
   end
 
-  if SUPERWOW_VERSION == "1.5" then
+  local swVersion = tonumber(SUPERWOW_VERSION)
+  if swVersion and swVersion >= 1.5 then
     QueueFunction(function()
       local pfCombatText_AddMessage = _G.CombatText_AddMessage
       _G.CombatText_AddMessage = function(message, a, b, c, d, e, f)
@@ -166,11 +167,11 @@ pfUI:RegisterModule("superwow", "vanilla", function ()
     end
 
     -- Add slash command for clickthrough toggle
-    SLASH_PFCLICKTHROUGH1 = "/clickthrough"
-    SLASH_PFCLICKTHROUGH2 = "/ct"
+    _G.SLASH_PFCLICKTHROUGH1 = "/clickthrough"
+    _G.SLASH_PFCLICKTHROUGH2 = "/ct"
     SlashCmdList["PFCLICKTHROUGH"] = function()
       local enabled = pfUI.api.ToggleClickthrough()
-      DEFAULT_CHAT_FRAME:AddMessage("|cff33ffccpfUI|r: Clickthrough mode " .. (enabled and "|cff00ff00enabled|r" or "|cffff0000disabled|r"))
+      DEFAULT_CHAT_FRAME:AddMessage("|cff" .. (pfUI.chex or "33ffcc") .. "pfUI|r: Clickthrough mode " .. (enabled and "|cff00ff00enabled|r" or "|cffff0000disabled|r"))
     end
   end
 
@@ -254,8 +255,8 @@ pfUI:RegisterModule("superwow", "vanilla", function ()
     end
 
     if event == "PLAYER_ENTERING_WORLD" then
-      -- Cache player GUID
-      if UnitExists then
+      -- Cache player GUID (guard the DLL function, not UnitExists which is always present)
+      if GetUnitGUID then
         local guid = GetUnitGUID("player")
         playerGuid = guid
       end
@@ -302,7 +303,7 @@ pfUI:RegisterModule("superwow", "vanilla", function ()
         if rec then
           spell = rec.name
           local iconID = rec.spellIconID
-          icon = iconID and GetSpellIconTexture(iconID) or nil
+          icon = (iconID and GetSpellIconTexture and GetSpellIconTexture(iconID)) or nil
         end
       elseif SpellInfo and SpellInfo(spell_id) then
         spell, _, icon = SpellInfo(spell_id)

@@ -557,6 +557,10 @@ nameplates:RegisterEvent("PLAYER_LOGOUT")
 nameplates:RegisterEvent("UNIT_COMBO_POINTS")
 nameplates:RegisterEvent("PLAYER_COMBO_POINTS")
 nameplates:RegisterEvent("ZONE_CHANGED_NEW_AREA")
+nameplates:RegisterEvent("ZONE_CHANGED")
+nameplates:RegisterEvent("ZONE_CHANGED_INDOORS")
+nameplates:RegisterEvent("PLAYER_REGEN_DISABLED")
+nameplates:RegisterEvent("PLAYER_REGEN_ENABLED")
 nameplates:RegisterEvent("RAID_ROSTER_UPDATE")
 nameplates:RegisterEvent("PARTY_MEMBERS_CHANGED")
 if GetUnitField then
@@ -598,21 +602,21 @@ end
       end
       return
       
-    elseif event == "PLAYER_ENTERING_WORLD" or event == "ZONE_CHANGED_NEW_AREA" then
+    elseif event == "PLAYER_ENTERING_WORLD" or event == "ZONE_CHANGED_NEW_AREA" or event == "ZONE_CHANGED" or event == "ZONE_CHANGED_INDOORS" then
       if event == "PLAYER_ENTERING_WORLD" then
         _, PlayerGUID = UnitExists("player")
         CacheConfig()
         this:SetGameVariables()
         RebuildRaidGuidCache()
       end
-      
+
       -- Handle friendly zone nameplate disable feature
       local disableHostile = C.nameplates["disable_hostile_in_friendly"] == "1"
       local disableFriendly = C.nameplates["disable_friendly_in_friendly"] == "1"
-      
+
       if disableHostile or disableFriendly then
         local pvpType = GetZonePVPInfo()
-        local nowFriendly = (pvpType == "friendly")
+        local nowFriendly = (pvpType == "friendly" or pvpType == "sanctuary")
         
         if nowFriendly and not inFriendlyZone then
           -- Entering friendly zone - save current state and hide based on options
@@ -647,6 +651,12 @@ end
           savedFriendlyState = nil
         end
       end
+
+      -- Hide-out-of-combat feature takes final authority when enabled
+      nameplates.ApplyCombatVisibility()
+
+    elseif event == "PLAYER_REGEN_DISABLED" or event == "PLAYER_REGEN_ENABLED" then
+      nameplates.ApplyCombatVisibility()
 
     elseif event == "RAID_ROSTER_UPDATE" or event == "PARTY_MEMBERS_CHANGED" then
       RebuildRaidGuidCache()
@@ -754,21 +764,22 @@ end
           if guidRegistry[guid] == plate then
             guidRegistry[guid] = nil
           end
-          
+
           -- Clean cast cache ONLY if cast has expired
           -- (Don't delete active casts just because plate was hidden briefly)
           local castInfo = GetCastInfo(guid)
-          if castInfo and castInfo.endTime and castInfo.endTime < frameState.now then
+          local castActive = castInfo and castInfo.endTime and castInfo.endTime >= frameState.now
+          if castInfo and not castActive then
             if pfUI.libdebuff_casts then
               pfUI.libdebuff_casts[guid] = nil
             end
           end
-          
+
           -- Clean debuffCache
           if debuffCache[guid] then
             debuffCache[guid] = nil
           end
-          
+
           -- Clean threatMemory
           if threatMemory[guid] then
             threatMemory[guid] = nil
@@ -777,6 +788,14 @@ end
           -- Clean combatColorCache
           if combatColorCache[guid] then
             combatColorCache[guid] = nil
+          end
+
+          -- PERF: stop re-running this whole block every central tick for a plate
+          -- that stays hidden. OnShow re-reads GetName(1) and repopulates cachedGuid
+          -- when the plate returns. Keep polling only while a cast is still active
+          -- so it can still be expired above.
+          if not castActive then
+            plate.nameplate.cachedGuid = nil
           end
         end
       end
@@ -809,7 +828,7 @@ end
   nameplates.OnCreate = function(frame)
     local parent = frame or this
     platecount = platecount + 1
-    platename = "pfNamePlate" .. platecount
+    local platename = "pfNamePlate" .. platecount
 
     -- create pfUI nameplate overlay
     local nameplate = CreateFrame("Button", platename, parent)
@@ -1875,7 +1894,25 @@ end
     end
   end
 
+  -- Hide nameplates while out of combat, reveal them when combat starts.
+  -- Returns true when the feature is enabled (and thus owns visibility).
+  nameplates.ApplyCombatVisibility = function()
+    if C.nameplates["hide_out_of_combat"] ~= "1" then return false end
+    if UnitAffectingCombat("player") then
+      -- in combat: restore the configured hostile/friendly visibility
+      nameplates:SetGameVariables()
+    else
+      -- out of combat: hide all nameplates
+      _G.NAMEPLATES_ON = nil
+      HideNameplates()
+      _G.FRIENDNAMEPLATES_ON = nil
+      HideFriendNameplates()
+    end
+    return true
+  end
+
   nameplates:SetGameVariables()
+  nameplates.ApplyCombatVisibility()
 
   nameplates.UpdateConfig = function()
     -- Refresh config cache for all cfg.* values
@@ -1884,6 +1921,14 @@ end
     
     -- update debuff filters
     DebuffFilterPopulate()
+
+    -- If hide-out-of-combat is enabled, it owns nameplate visibility
+    if nameplates.ApplyCombatVisibility() then
+      for plate in pairs(registry) do
+        nameplates.OnConfigChange(plate)
+      end
+      return
+    end
 
     -- Check friendly zone state when config changes
     local disableHostile = C.nameplates["disable_hostile_in_friendly"] == "1"

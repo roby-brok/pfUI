@@ -424,9 +424,25 @@ local dispelTypeMap = {
 
 -- Get current debuff state directly from WoW via GetUnitField
 -- Returns: { [displaySlot] = {auraSlot, spellId, spellName, stacks, texture, dtype} }
+--
+-- Cached per-GUID for a short window: nameplates call UnitDebuff up to 16 times
+-- (once per display slot) in the same frame, so without this the whole map was
+-- rebuilt 16x per plate refresh (~270 table allocs). The cache collapses that to
+-- one build, and recycles the map + slot tables per GUID so warm rebuilds are
+-- allocation-free. Entries are dropped in CleanupUnit.
+local slotMapCache = {}
+local SLOTMAP_TTL = 0.05
+libdebuff.slotMapCache = slotMapCache
+
 local function GetDebuffSlotMap(guid)
   if not guid or not GetUnitField then
     return nil
+  end
+
+  local now = GetTime()
+  local entry = slotMapCache[guid]
+  if entry and entry.t > now then
+    return entry.map
   end
 
   local auras = GetUnitField(guid, "aura")
@@ -438,7 +454,9 @@ local function GetDebuffSlotMap(guid)
     debugStats.getunitfield_calls = debugStats.getunitfield_calls + 1
   end
 
-  local map = {}
+  if not entry then entry = { map = {}, slots = {} }; slotMapCache[guid] = entry end
+  local map = entry.map
+  for k in pairs(map) do map[k] = nil end
   local displaySlot = 0
 
   -- Debuff aura slots are 33-48
@@ -456,17 +474,19 @@ local function GetDebuffSlotMap(guid)
           dtype = dispelTypeMap[dispelId]
         end
       end
-      map[displaySlot] = {
-        auraSlot = auraSlot,
-        spellId = spellId,
-        spellName = spellName or "Unknown",
-        stacks = stacks,
-        texture = texture,
-        dtype = dtype
-      }
+      local slot = entry.slots[displaySlot]
+      if not slot then slot = {}; entry.slots[displaySlot] = slot end
+      slot.auraSlot = auraSlot
+      slot.spellId = spellId
+      slot.spellName = spellName or "Unknown"
+      slot.stacks = stacks
+      slot.texture = texture
+      slot.dtype = dtype
+      map[displaySlot] = slot
     end
   end
 
+  entry.t = now + SLOTMAP_TTL
   return map
 end
 
@@ -539,7 +559,23 @@ local function CleanupUnit(guid)
     pendingCasts[guid] = nil
     cleaned = true
   end
-  
+
+  -- prevent unbounded per-GUID growth over a long session
+  if slotMapCache[guid] then
+    slotMapCache[guid] = nil
+    cleaned = true
+  end
+
+  if displayToAura[guid] then
+    displayToAura[guid] = nil
+    cleaned = true
+  end
+
+  if recentCasts[guid] then
+    recentCasts[guid] = nil
+    cleaned = true
+  end
+
   if debugStats.enabled and cleaned and IsCurrentTarget(guid) then
     DEFAULT_CHAT_FRAME:AddMessage(string.format("|cffff0000[CLEANUP]|r GUID %s", DebugGuid(guid)))
   end
@@ -812,6 +848,26 @@ end
 -- ============================================================================
 
 local cache = {}
+
+-- Iterate only the FILLED debuff slots (they are contiguous 1..N in the slot
+-- map) instead of always probing 16 display slots. Nameplates use this fast
+-- path; it reuses the cached UnitDebuff resolution so timer logic stays single-
+-- sourced. callback(auraSlot, spellId, effect, texture, stacks, dtype, duration, timeleft)
+function libdebuff:IterDebuffs(unit, callback)
+  if not (hasNampower and GetUnitGUID) then return end
+  local guid = GetUnitGUID(unit)
+  if not guid then return end
+  local slotMap = GetDebuffSlotMap(guid)
+  if not slotMap then return end
+  for displaySlot = 1, 16 do
+    local slot = slotMap[displaySlot]
+    if not slot then break end
+    local effect, _, texture, stacks, dtype, duration, timeleft = self:UnitDebuff(unit, displaySlot)
+    if effect then
+      callback(slot.auraSlot, slot.spellId, effect, texture, stacks, dtype, duration, timeleft)
+    end
+  end
+end
 
 function libdebuff:UnitDebuff(unit, displaySlot)
   local unitname = UnitName(unit)
@@ -1378,7 +1434,7 @@ if hasNampower then
 
       -- selfdebuff mode: write ownDebuffs immediately on confirmed hit
       -- so buffwatch shows our debuffs even when over the 16 debuff cap
-      if event == "SPELL_GO_SELF" and targetGuid and not isNullTarget then
+      if event == "SPELL_GO_SELF" and targetGuid and targetGuid ~= "" and targetGuid ~= "0x0000000000000000" then
         local selfdebuffMode = pfUI_config and pfUI_config.buffbar and
           pfUI_config.buffbar.tdebuff and pfUI_config.buffbar.tdebuff.selfdebuff == "1"
         if selfdebuffMode then

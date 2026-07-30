@@ -205,7 +205,7 @@ pfUI.libdebuff_spell_start_self_hooks["libpredict"] = function(spellId, casterGu
     -- Discard pending and trust the actual targetGuid from SPELL_START_SELF.
     if pending.targetGuid == targetGuid then
       local name = UnitName(pending.targetGuid)
-      if name and name ~= UNKNOWNOBJECT and name ~= UKNOWNBEING then
+      if name and name ~= UNKNOWNOBJECT and name ~= UNKNOWNBEING then
         pendingTarget = name
         pendingTargetGuid = pending.targetGuid
       end
@@ -872,7 +872,10 @@ resetcache:SetScript("OnEvent", function()
     cache = pfUI_cache["prediction"][realm][player]["heals"]
   end
 
-  if event == "UNIT_INVENTORY_CHANGED" or "PLAYER_ENTERING_WORLD" then
+  -- only the gear scan is inventory/login specific; talent & skill events must
+  -- skip this block and fall through to the cache-invalidation loop below so a
+  -- respec actually refreshes cached heal amounts
+  if event == "UNIT_INVENTORY_CHANGED" or event == "PLAYER_ENTERING_WORLD" then
     -- skip non-player events
     if arg1 and arg1 ~= "player" then return end
 
@@ -1279,7 +1282,7 @@ libpredict.sender:SetScript("OnEvent", function()
 end)
 
 function libpredict:GetHotDuration(unit, spell)
-  if unit == UNKNOWNOBJECT or unit == UNKOWNBEING then return end
+  if unit == UNKNOWNOBJECT or unit == UNKNOWNBEING then return end
   
   -- NEW: Try libdebuff first (Nampower AURA_CAST events)
   if pfUI.api.libdebuff and pfUI.api.libdebuff.GetBestAuraCast then

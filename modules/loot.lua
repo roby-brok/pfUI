@@ -37,10 +37,11 @@ pfUI:RegisterModule("loot", "vanilla:tbc", function ()
   function pfUI.loot.RaidRoll(candidates)
     if type(candidates) ~= "table" then return end
     local slot = pfUI.loot.selectedSlot or 0
+    if slot == 0 then return end -- no slot selected: GetLootSlotInfo(0) returns nil quality
     local to = table.getn(candidates)
     if to >= 1 then
       local _,_,_,quality = GetLootSlotInfo(slot)
-      if quality >= tonumber(C.loot.rollannouncequal) then
+      if quality and quality >= tonumber(C.loot.rollannouncequal) then
         SendChatMessageWide(T["Random Rolling"].." "..GetLootSlotLink(slot))
         if C.loot.rollannounce == "1" then
           local k,names = 1, ""
@@ -512,7 +513,7 @@ pfUI:RegisterModule("loot", "vanilla:tbc", function ()
         CreateBackdropShadow(pfUI.loot)
         pfUI.loot.backdrop:SetBackdropBorderColor(color.r, color.g, color.b, 1)
       end
-      pfUI.loot:SetHeight(math.max((real*22)+4*border), 20)
+      pfUI.loot:SetHeight(math.max((real*22)+4*border, 20))
       pfUI.loot:SetWidth(maxwidth + 22 + 8*border)
     end
   end
@@ -581,8 +582,13 @@ pfUI:RegisterModule("loot", "vanilla:tbc", function ()
       end
     end)
 
-    if C.loot.autoresize == "1" then
-      frame:SetScript("OnUpdate", function()
+    -- autoresize: one throttled updater on the loot frame instead of a full
+    -- UpdateLootFrame rebuild per slot button every frame (was N-squared per frame)
+    if C.loot.autoresize == "1" and not pfUI.loot.autoresizeHooked then
+      pfUI.loot.autoresizeHooked = true
+      pfUI.loot:SetScript("OnUpdate", function()
+        if (this.resizeTick or 0) > GetTime() then return end
+        this.resizeTick = GetTime() + 0.1
         pfUI.loot:UpdateLootFrame()
       end)
     end
@@ -646,6 +652,9 @@ pfUI:RegisterModule("loot", "vanilla:tbc", function ()
     end
 
     if event == "LOOT_OPENED" then
+      -- arg1 of LOOT_OPENED is the autoloot flag; it decides whether closing
+      -- the loot has to be reported back to the server
+      local autoLoot = arg1
       ShowUIPanel(this)
 
       if(not this:IsShown()) then
@@ -686,8 +695,10 @@ pfUI:RegisterModule("loot", "vanilla:tbc", function ()
         if (who) and  who == pfUI.loot.me then
           local winner = tonumber(roll)
           GiveMasterLoot(pfUI.loot.selectedSlot, pfUI.loot.randoms[winner])
+          -- clear ONLY on our own roll result; other players' rolls and unrelated
+          -- system messages must not cancel the pending master-loot assignment
+          pfUI.loot.randomRolling = nil
         end
-        pfUI.loot.randomRolling = nil
       end
       -- collecting rolls from raid, discard duplicates and 'cheating'
       if pfUI.loot.monitorRolling ~= nil then

@@ -1,7 +1,7 @@
 pfUI:RegisterModule("hdgraphic", "vanilla", function ()
   -- inject video settings to provide advanced slider values (deferred until frame is shown)
   local origOptionsFrame_OnShow = OptionsFrame_OnShow
-  function OptionsFrame_OnShow()
+  function _G.OptionsFrame_OnShow()
     if origOptionsFrame_OnShow then origOptionsFrame_OnShow() end
     if _G.OptionsFrameSliders and _G.OptionsFrameSliders[3] then
       _G.OptionsFrameSliders[3].maxValue = 15

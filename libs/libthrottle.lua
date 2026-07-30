@@ -52,28 +52,36 @@ function libthrottle:DelayToFps(delay)
   return math.floor(1 / delay)
 end
 
+-- Cache of "<category>_custom" key strings so the hot path never concatenates
+-- (Get runs per-frame per-plate; the concat was the only per-call allocation).
+libthrottle.customKeys = {}
+
 -- Get throttle delay for a category
 -- Returns: delay in seconds
 function libthrottle:Get(category)
-  local configValue = _G.pfUI_throttle and _G.pfUI_throttle[category]
+  local throttle = _G.pfUI_throttle
+  local configValue = throttle and throttle[category]
   if not configValue then
     configValue = self.defaults[category] or "normal"
   end
-  
+
   -- Check if it's a preset name
   local preset = self.presets[configValue]
   if preset then
     return preset.delay
   end
-  
-  -- If it's "custom", read from the _custom field
-  if configValue == "custom" then
-    local customFps = tonumber(_G.pfUI_throttle[category .. "_custom"])
+
+  -- If it's "custom", read from the _custom field (guard against a missing
+  -- pfUI_throttle on the very first login before the initializer has run).
+  if configValue == "custom" and throttle then
+    local key = self.customKeys[category]
+    if not key then key = category .. "_custom"; self.customKeys[category] = key end
+    local customFps = tonumber(throttle[key])
     if customFps then
       return self:FpsToDelay(customFps)
     end
   end
-  
+
   -- Fallback to normal preset
   return self.presets["normal"].delay
 end

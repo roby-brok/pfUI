@@ -1,11 +1,11 @@
 pfUI:RegisterModule("macrotweak", "vanilla", function ()
-  local conflictAddons = { "Supermacro", "SuperCleveRoidMacros", "UltimaMacros" }
+  local conflictAddons = { "Supermacro", "SuperMacro-turtle-SuperWoW", "SuperCleveRoidMacros", "UltimaMacros" }
   local disabled = false
 
   local function CheckConflicts()
     for _, name in pairs(conflictAddons) do
       if IsAddOnLoaded(name) then
-        DEFAULT_CHAT_FRAME:AddMessage("|cff33ffccpfUI|r: " .. name .. " found, macrotweak disabled.")
+        DEFAULT_CHAT_FRAME:AddMessage("|cff" .. (pfUI.chex or "33ffcc") .. "pfUI|r: " .. name .. " found, macrotweak disabled.")
         disabled = true
         return true
       end
@@ -14,7 +14,8 @@ pfUI:RegisterModule("macrotweak", "vanilla", function ()
   end
 
   -- do not write macro calls into chat input history
-  if ChatFrameEditBox._AddHistoryLine then
+  -- (install once: _AddHistoryLine is our backup slot and is nil until we set it)
+  if not ChatFrameEditBox._AddHistoryLine then
     local userinput
     ChatFrameEditBox._AddHistoryLine = ChatFrameEditBox.AddHistoryLine
     ChatFrameEditBox.AddHistoryLine = function(self, text)
@@ -50,10 +51,12 @@ pfUI:RegisterModule("macrotweak", "vanilla", function ()
   pfUI.api.RegisterSlashCommand("PFUSE", { "/equip" , "/use", "/pfequip", "/pfuse" }, function (msg)
     if not msg or msg == "" then return end
     local bag, slot, _
-    if string.find(msg, "%d+%s+%d+") then
-      _, _, bag, slot = string.find(msg, "(%d+)%s+(%d+)")
-    elseif string.find(msg, "%d+") then
-      _, _, slot = string.find(msg, "(%d+)")
+    -- anchor to the whole string so item names containing digits ("Healing Potion 3")
+    -- fall through to FindItem instead of being parsed as an inventory slot
+    if string.find(msg, "^%d+%s+%d+$") then
+      _, _, bag, slot = string.find(msg, "^(%d+)%s+(%d+)$")
+    elseif string.find(msg, "^%d+$") then
+      _, _, slot = string.find(msg, "^(%d+)$")
     else
       bag, slot = FindItem(msg)
     end

@@ -150,7 +150,7 @@ pfUI:RegisterSkin("Friends", "vanilla:tbc", function ()
     end
 
     -- set positions
-    hooksecurefunc("WhoList_Update", function()
+    local function UpdateWhoRowLayout()
       for i = 1, WHOS_TO_DISPLAY do
         local level = _G["WhoFrameButton"..i.."Level"]
         level:ClearAllPoints()
@@ -166,7 +166,9 @@ pfUI:RegisterSkin("Friends", "vanilla:tbc", function ()
         name:ClearAllPoints()
         name:SetPoint("LEFT", class, "RIGHT", 0, 0)
       end
-    end)
+    end
+    UpdateWhoRowLayout()
+    hooksecurefunc("WhoList_Update", UpdateWhoRowLayout)
 
     CreateBackdrop(WhoFrameEditBox, nil, true)
     WhoFrameEditBox:SetTextInsets(5,5,5,5)
@@ -455,31 +457,13 @@ pfUI:RegisterSkin("Friends", "vanilla:tbc", function ()
       end
     end
 
-    SkinButton(RaidFrameRaidInfoButton)
-    SkinButton(RaidFrameConvertToRaidButton)
-
+    -- all RaidFrame buttons are in Blizzard_RaidUI in Turtle WoW
     HookAddonOrVariable("Blizzard_RaidUI", function()
-      for i = 1, MAX_RAID_MEMBERS do
-        StripTextures(_G["RaidGroupButton"..i])
-        CreateBackdrop(_G["RaidGroupButton"..i], nil, true)
-        SetHighlight(_G["RaidGroupButton"..i], 1, 1, 0)
-      end
-
-      for i = 1, NUM_RAID_GROUPS do
-        StripTextures(_G["RaidGroup" .. i])
-
-        _G["RaidGroup" .. i .. "Label"]:ClearAllPoints()
-        _G["RaidGroup" .. i .. "Label"]:SetPoint("TOP", 0, 10)
-
-        for j = 1, MEMBERS_PER_RAID_GROUP do
-          StripTextures(_G["RaidGroup"..i.."Slot"..j])
-          CreateBackdrop(_G["RaidGroup"..i.."Slot"..j], nil, true)
-          SetHighlight(_G["RaidGroup"..i.."Slot"..j], 1, 1, 0)
-        end
-      end
-
-      SkinButton(RaidFrameReadyCheckButton)
-      SkinButton(RaidFrameAddMemberButton)
+      if RaidFrameRaidInfoButton      then SkinButton(RaidFrameRaidInfoButton)      end
+      if RaidFrameConvertToRaidButton then SkinButton(RaidFrameConvertToRaidButton) end
+      if RaidFrameReadyCheckButton    then SkinButton(RaidFrameReadyCheckButton)    end
+      if RaidFrameAddMemberButton     then SkinButton(RaidFrameAddMemberButton)     end
+      -- RaidGroup frames and buttons are hidden by modules/raid.lua
     end)
   end
 end)

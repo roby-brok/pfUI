@@ -168,7 +168,7 @@ pfUI:RegisterModule("tooltip", "vanilla", function ()
     elseif MobHealthFrame then
       local index = (this.name or "") .. ":" .. (this.level or "")
       local ppp = MobHealth_PPP(index)
-      if perc and ppp and ppp > 0 and not UnitIsUnit("mouseover", "pet") then
+      if ppp and ppp > 0 and not UnitIsUnit("mouseover", "pet") then
         rhp = round(hp * ppp)
         rhpmax = round(100 * ppp)
         estimated = true

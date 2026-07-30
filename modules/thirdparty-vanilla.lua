@@ -895,10 +895,10 @@ pfUI:RegisterModule("thirdparty-vanilla", "vanilla", function()
       SM_ActionButton_SetTooltip(actionid)
     end
 
-    -- reassign the new event handler
+    -- reassign the new enter handler (NewButtonEvent was never defined; assigning
+    -- it just cleared OnEvent, which pfUI buttons don't use in this fork)
     for i=1,10 do
       for j=1,12 do
-        pfUI.bars[i][j]:SetScript("OnEvent", NewButtonEvent)
         pfUI.bars[i][j]:SetScript("OnEnter", NewButtonEnter)
       end
     end

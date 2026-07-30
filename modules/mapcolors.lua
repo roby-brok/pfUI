@@ -88,8 +88,12 @@ pfUI:RegisterModule("mapcolors", function ()
   local function ColorizeName(frame)
     local _, class = UnitClass(frame.unit)
     local color = RAID_CLASS_COLORS[class]
-    frame.name = frame.name or UnitName(frame.unit)
-    frame.name = '|c'..color.colorStr..frame.name..'|r'
+    if not color then return end
+    -- keep the uncolored name so we don't nest another |c...|r layer every hover
+    frame.rawname = frame.rawname or UnitName(frame.unit)
+    if frame.rawname then
+      frame.name = '|c'..color.colorStr..frame.rawname..'|r'
+    end
   end
 
   local function UpdateUnitColors(unit_button_name, tooltip)

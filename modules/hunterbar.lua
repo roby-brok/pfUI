@@ -18,6 +18,11 @@ pfUI:RegisterModule("hunterbar", "vanilla", function ()
   pfUI.hunterbar.lastPage = nil
 
   pfUI.hunterbar:SetScript("OnUpdate", function()
+    -- throttle to 10 fps: page swaps are imperceptible at that rate and this saves
+    -- two IsSpellInRange DLL calls every frame while a target is up
+    if (this.tick or 0) > GetTime() then return end
+    this.tick = GetTime() + 0.1
+
     -- only act when there is a live, attackable target
     if not UnitExists("target") or not UnitCanAttack("player", "target") then
       return

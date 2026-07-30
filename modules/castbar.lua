@@ -116,7 +116,7 @@ pfUI:RegisterModule("castbar", "vanilla", function ()
       this.focusGuid = focusGuid
 
       -- Try libdebuff_casts first for GUID-based units (works with Turtle GUID + Nampower events)
-      local cast, nameSubtext, text, texture, startTime, endTime
+      local cast, nameSubtext, text, texture, startTime, endTime, isTradeSkill
       local castBlocked = false
       if focusGuid and pfUI.libdebuff_casts and pfUI.libdebuff_casts[focusGuid] then
         local castData = pfUI.libdebuff_casts[focusGuid]
@@ -240,11 +240,12 @@ pfUI:RegisterModule("castbar", "vanilla", function ()
         this.bar:SetValue(cur)
 
         if this.showtimer then
+          local total = this.hidetotaltimer and "" or (" / " .. FormatCastbarTime(max))
           if this.delay and this.delay > 0 then
             local delay = "|cffffaaaa" .. (channel and "-" or "+") .. FormatCastbarTime(this.delay) .. " |r "
-            this.bar.right:SetText(delay .. FormatCastbarTime(cur) .. " / " .. FormatCastbarTime(max))
+            this.bar.right:SetText(delay .. FormatCastbarTime(cur) .. total)
           else
-            this.bar.right:SetText(FormatCastbarTime(cur) .. " / " .. FormatCastbarTime(max))
+            this.bar.right:SetText(FormatCastbarTime(cur) .. total)
           end
         end
 
@@ -330,6 +331,7 @@ pfUI:RegisterModule("castbar", "vanilla", function ()
     pfUI.castbar.player.showicon = C.castbar.player.showicon == "1" and true or nil
     pfUI.castbar.player.showname = C.castbar.player.showname == "1" and true or nil
     pfUI.castbar.player.showtimer = C.castbar.player.showtimer == "1" and true or nil
+    pfUI.castbar.player.hidetotaltimer = C.castbar.player.hidetotaltimer == "1" and true or nil
     pfUI.castbar.player.showlag = C.castbar.player.showlag == "1" and true or nil
     pfUI.castbar.player.showrank = C.castbar.player.showrank == "1" and true or nil
     pfUI.castbar.player.spacing = default_border * 2 + tonumber(C.unitframes.player.pspace) * GetPerfectPixel()
@@ -355,9 +357,13 @@ pfUI:RegisterModule("castbar", "vanilla", function ()
   -- [[ pfTargetCastbar ]] --
   if C.castbar.target.hide_pfui == "0" then
     pfUI.castbar.target = CreateCastbar("pfTargetCastbar", UIParent, "target")
+    -- raise the target castbar above other frames
+    pfUI.castbar.target:SetFrameStrata("HIGH")
+    pfUI.castbar.target:SetFrameLevel(20)
     pfUI.castbar.target.showicon = C.castbar.target.showicon == "1" and true or nil
     pfUI.castbar.target.showname = C.castbar.target.showname == "1" and true or nil
     pfUI.castbar.target.showtimer = C.castbar.target.showtimer == "1" and true or nil
+    pfUI.castbar.target.hidetotaltimer = C.castbar.target.hidetotaltimer == "1" and true or nil
     pfUI.castbar.target.showlag = C.castbar.target.showlag == "1" and true or nil
     pfUI.castbar.target.showrank = C.castbar.target.showrank == "1" and true or nil
     pfUI.castbar.target.spacing = default_border * 2 + tonumber(C.unitframes.target.pspace) * GetPerfectPixel()
@@ -386,6 +392,7 @@ pfUI:RegisterModule("castbar", "vanilla", function ()
     pfUI.castbar.focus.showicon = C.castbar.focus.showicon == "1" and true or nil
     pfUI.castbar.focus.showname = C.castbar.focus.showname == "1" and true or nil
     pfUI.castbar.focus.showtimer = C.castbar.focus.showtimer == "1" and true or nil
+    pfUI.castbar.focus.hidetotaltimer = C.castbar.focus.hidetotaltimer == "1" and true or nil
     pfUI.castbar.focus.showlag = C.castbar.focus.showlag == "1" and true or nil
     pfUI.castbar.focus.showrank = C.castbar.focus.showrank == "1" and true or nil
     pfUI.castbar.focus.spacing = default_border * 2 + tonumber(C.unitframes.focus.pspace) * GetPerfectPixel()

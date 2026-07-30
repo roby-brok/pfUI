@@ -144,8 +144,8 @@ pfUI:RegisterModule("unitxp", "vanilla", function ()
         -- Free frame mode: movable standalone frame, same as rangedisplay module
         if not pfRangeDisplay then
           local f = CreateFrame("Frame", "pfRangeDisplay", UIParent)
-          f:SetWidth(90)
-          f:SetHeight(20)
+          f:SetWidth(tonumber(C.unitframes.distance_width) or 90)
+          f:SetHeight(tonumber(C.unitframes.distance_height) or 20)
           f:SetFrameStrata("MEDIUM")
           f:SetPoint("CENTER", UIParent, "CENTER", 0, -100)
           CreateBackdrop(f, nil, true)
@@ -205,6 +205,9 @@ pfUI:RegisterModule("unitxp", "vanilla", function ()
             f.text:SetTextColor(r, g, b, 1)
             f.text:SetText(string.format("%.1f%s", distance, suffix))
           end)
+          -- expose the poller frame so PLAYER_LOGOUT can stop its UnitXP OnUpdate
+          -- (it lives on this separate frame, not on distanceIndicator) -> crash 132
+          pfUI.uf.target.distanceScanner = scanner
         end
         pfUI.uf.target.distanceIndicator = pfRangeDisplay
       end
@@ -235,6 +238,9 @@ pfUI:RegisterModule("unitxp", "vanilla", function ()
         end
         if pfUI.uf.target.distanceIndicator then
           pfUI.uf.target.distanceIndicator:SetScript("OnUpdate", nil)
+        end
+        if pfUI.uf.target.distanceScanner then
+          pfUI.uf.target.distanceScanner:SetScript("OnUpdate", nil)
         end
       end
       return
@@ -268,7 +274,7 @@ pfUI:RegisterModule("unitxp", "vanilla", function ()
     -- Also notify on BG queue pop
     local origBattlefieldPortShow = BattlefieldFrame_Show
     if origBattlefieldPortShow then
-      BattlefieldFrame_Show = function()
+      _G.BattlefieldFrame_Show = function()
         pcall(UnitXP, "notify", "taskbarIcon")
         pcall(UnitXP, "notify", "systemSound")
         return origBattlefieldPortShow()
@@ -352,10 +358,10 @@ pfUI:RegisterModule("unitxp", "vanilla", function ()
   end
 
   -- Debug command to test UnitXP indicators
-  SLASH_PFUNITXP1 = "/pfunitxp"
+  _G.SLASH_PFUNITXP1 = "/pfunitxp"
   SlashCmdList["PFUNITXP"] = function()
     local chat = DEFAULT_CHAT_FRAME
-    chat:AddMessage("|cff33ffccpfUI|r: UnitXP Indicator Debug")
+    chat:AddMessage("|cff" .. (pfUI.chex or "33ffcc") .. "pfUI|r: UnitXP Indicator Debug")
 
     -- Check if target exists
     if not UnitExists("target") then

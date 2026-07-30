@@ -107,16 +107,16 @@ pfUI:RegisterModule("afkcam", "vanilla:tbc", function ()
           h = h - 12
           noon = "PM"
         end
-        time = string.format("%.2d|cff33ffcc:|r%.2d %s", h, m, noon)
+        time = string.format("%.2d|cff" .. (pfUI.chex or "33ffcc") .. ":|r%.2d %s", h, m, noon)
       else
-        time = date("%I|cff33ffcc:|r%M %p")
+        time = date("%I|cff" .. (pfUI.chex or "33ffcc") .. ":|r%M %p")
       end
       clock.time:SetText(time)
     else
       if C.global.servertime == "1" then
-        time = string.format("%.2d|cff33ffcc:|r%.2d", h, m)
+        time = string.format("%.2d|cff" .. (pfUI.chex or "33ffcc") .. ":|r%.2d", h, m)
       else
-        time = date("%H|cff33ffcc:|r%M")
+        time = date("%H|cff" .. (pfUI.chex or "33ffcc") .. ":|r%M")
       end
     end
     clock.time:SetText(time)
@@ -143,6 +143,9 @@ pfUI:RegisterModule("afkcam", "vanilla:tbc", function ()
   end
 
   function afkcam:stop()
+    -- guard against stop() with no prior start() (AFK cleared inside the grace
+    -- window): _speed/_ownname would be nil and SetCVar(..., nil) errors
+    if not afkcam._spinning then return end
     MoveViewRightStop()
     SetCVar("cameraYawMoveSpeed",afkcam._speed)
     SetCVar("UnitNameOwn", afkcam._ownname)

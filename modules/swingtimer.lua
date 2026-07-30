@@ -23,8 +23,10 @@ pfUI:RegisterModule("swingtimer", "vanilla:tbc", function ()
     pendingCastSpellId = nil,
     mhFrozenAt = nil,
     hsQueued = false, cleaveQueued = false, maulQueued = false,
+    raptorQueued = false,
     isWarrior = false,
     isDruid = false,
+    isHunter = false,
     cachedHSSlots = {}, cachedCleaveSlots = {},
     useSpellQueueEvent = false,
     playerGUID = nil,
@@ -78,6 +80,12 @@ pfUI:RegisterModule("swingtimer", "vanilla:tbc", function ()
      [9745] = true, [9880] = true, [9881] = true,
     }
 
+  -- Raptor Strike spell IDs (all ranks 1 to 8)
+  local raptorSpellIDs = {
+    [2973] = true, [14260] = true, [14261] = true, [14262] = true,
+    [14263] = true, [14264] = true, [14265] = true, [14266] = true,
+  }
+
   -- Read config
   local sw_width     = tonumber(C.unitframes.swingtimerwidth) or 200
   local sw_height    = tonumber(C.unitframes.swingtimerheight) or 12
@@ -103,7 +111,8 @@ pfUI:RegisterModule("swingtimer", "vanilla:tbc", function ()
   local ohR, ohG, ohB, ohA = ParseColor(C.unitframes.swingtimerohcolor, 0.3, 0.8, 0.3, 1)
   local raR, raG, raB, raA = ParseColor(C.unitframes.swingtimerrangedcolor, 0.3, 0.6, 1.0, 1)
   local rwR, rwG, rwB, rwA = ParseColor(C.unitframes.swingtimerrangedwarncolor, 0.9, 0.0, 0.0, 1)
-  local isHunter = UnitClass("player") == "Hunter"
+  local _, playerClassToken = UnitClass("player")
+  local isHunter = playerClassToken == "HUNTER" -- locale-independent (second return is the English token)
   local mhDefaultR, mhDefaultG, mhDefaultB = mhR, mhG, mhB
 
 
@@ -310,8 +319,9 @@ pfUI:RegisterModule("swingtimer", "vanilla:tbc", function ()
   UpdateMovable(pfUI.swingtimer.mainhand)
   UpdateMovable(pfUI.swingtimer.ranged)
 
-  -- OH weapon detection
-  local OH_WEAPON_TYPES = { [13]=true, [21]=true }
+  -- OH weapon detection: slot 17 (off hand) accepts one-hand (13) and off-hand
+  -- weapons (22); main-hand-only (21) can never sit there.
+  local OH_WEAPON_TYPES = { [13]=true, [22]=true }
   local function HasOffhandWeapon()
     local l = GetInventoryItemLink("player", 17)
     if not l then return false end
@@ -524,6 +534,8 @@ pfUI:RegisterModule("swingtimer", "vanilla:tbc", function ()
     if sw_hsqueue then
       if S.maulQueued and S.isDruid then
         curR, curG, curB = 1.0, 0.55, 0.0 -- orange for druid maul queue
+      elseif S.raptorQueued and S.isHunter then
+        curR, curG, curB = 0.9, 0.9, 0.2 -- yellow for hunter raptor strike queue
       elseif S.isWarrior then
         local hs, cl = IsHSOrCleaveQueued()
         if cl then
@@ -734,9 +746,9 @@ pfUI:RegisterModule("swingtimer", "vanilla:tbc", function ()
       end
       S.pendingCastSpellId = nil
       return
-    elseif hsSpellIDs[spellId] or cleaveSpellIDs[spellId] or maulSpellIDs[spellId] or IsOnSwingSpell(spellId) then
+    elseif hsSpellIDs[spellId] or cleaveSpellIDs[spellId] or maulSpellIDs[spellId] or raptorSpellIDs[spellId] or IsOnSwingSpell(spellId) then
       S.hsQueued = false; S.cleaveQueued = false
-      S.maulQueued = false
+      S.maulQueued = false; S.raptorQueued = false
       ResetMH()
     elseif cleaveSpellIDs[spellId] then
       S.hsQueued = false; S.cleaveQueued = false
@@ -760,11 +772,13 @@ pfUI:RegisterModule("swingtimer", "vanilla:tbc", function ()
   pfUI.libdebuff_spell_cast_hooks = pfUI.libdebuff_spell_cast_hooks or {}
   pfUI.libdebuff_spell_cast_hooks["swingtimer"] = function(success, spellId)
     if hsSpellIDs[spellId] then
-      S.hsQueued = true; S.cleaveQueued = false; S.maulQueued = false
+      S.hsQueued = true; S.cleaveQueued = false; S.maulQueued = false; S.raptorQueued = false
     elseif cleaveSpellIDs[spellId] then
-      S.cleaveQueued = true; S.hsQueued = false; S.maulQueued = false
+      S.cleaveQueued = true; S.hsQueued = false; S.maulQueued = false; S.raptorQueued = false
     elseif maulSpellIDs[spellId] then
-      S.maulQueued = true; S.hsQueued = false; S.cleaveQueued = false
+      S.maulQueued = true; S.hsQueued = false; S.cleaveQueued = false; S.raptorQueued = false
+    elseif raptorSpellIDs[spellId] then
+      S.raptorQueued = true; S.hsQueued = false; S.cleaveQueued = false; S.maulQueued = false
     end
   end
 
@@ -850,14 +864,16 @@ pfUI:RegisterModule("swingtimer", "vanilla:tbc", function ()
       if eventCode == ON_SWING_QUEUED then
         S.useSpellQueueEvent = true
         if hsSpellIDs[spellId] then
-          S.hsQueued = true; S.cleaveQueued = false; S.maulQueued = false
+          S.hsQueued = true; S.cleaveQueued = false; S.maulQueued = false; S.raptorQueued = false
         elseif cleaveSpellIDs[spellId] then
-          S.cleaveQueued = true; S.hsQueued = false; S.maulQueued = false
+          S.cleaveQueued = true; S.hsQueued = false; S.maulQueued = false; S.raptorQueued = false
         elseif maulSpellIDs[spellId] then
-          S.maulQueued = true; S.hsQueued = false; S.cleaveQueued = false
+          S.maulQueued = true; S.hsQueued = false; S.cleaveQueued = false; S.raptorQueued = false
+        elseif raptorSpellIDs[spellId] then
+          S.raptorQueued = true; S.hsQueued = false; S.cleaveQueued = false; S.maulQueued = false
         end
       elseif eventCode == ON_SWING_QUEUE_POPPED then
-        S.hsQueued = false; S.cleaveQueued = false; S.maulQueued = false
+        S.hsQueued = false; S.cleaveQueued = false; S.maulQueued = false; S.raptorQueued = false
       end
 
     elseif event == "START_AUTOATTACK" then
@@ -870,6 +886,7 @@ pfUI:RegisterModule("swingtimer", "vanilla:tbc", function ()
       local _, class = UnitClass("player")
       S.isWarrior  = (class == "WARRIOR")
       S.isDruid    = (class == "DRUID")
+      S.isHunter   = (class == "HUNTER")
       S.playerGUID = GetUnitGUID("player")
       UpdateWeaponSpeeds()
       RebuildQueueSlotCache()
@@ -898,6 +915,7 @@ pfUI:RegisterModule("swingtimer", "vanilla:tbc", function ()
       S.hsQueued     = false
       S.cleaveQueued = false
       S.maulQueued   = false
+      S.raptorQueued = false
 
     elseif event == "UNIT_DIED" then
       if arg1 and arg1 == S.playerGUID then
@@ -946,6 +964,7 @@ pfUI:RegisterModule("swingtimer", "vanilla:tbc", function ()
     IsHSQueued        = function() return S.hsQueued end,
     IsCleaveQueued    = function() return S.cleaveQueued end,
     IsMaulQueued      = function() return S.maulQueued end,
+    IsRaptorQueued    = function() return S.raptorQueued end,
   }
 
   UpdateWeaponSpeeds()

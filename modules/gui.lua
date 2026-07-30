@@ -262,7 +262,7 @@ pfUI:RegisterModule("gui", "vanilla:tbc", function ()
         this.objectCount = this.objectCount + 1
         frame.caption:SetJustifyH("LEFT")
         frame.caption:SetJustifyV("BOTTOM")
-        frame.caption:SetTextColor(.2,1,.8,1)
+        frame.caption:SetTextColor(pfUI.cr,pfUI.cg,pfUI.cb,1)
         frame.caption:SetAllPoints(frame)
       end
 
@@ -272,7 +272,7 @@ pfUI:RegisterModule("gui", "vanilla:tbc", function ()
         frame.input = CreateFrame("EditBox", nil, frame)
         CreateBackdrop(frame.input, nil, true)
         frame.input:SetTextInsets(5, 5, 5, 5)
-        frame.input:SetTextColor(.2,1,.8,1)
+        frame.input:SetTextColor(pfUI.cr,pfUI.cg,pfUI.cb,1)
         frame.input:SetJustifyH("RIGHT")
 
         frame.input:SetWidth(100)
@@ -291,7 +291,7 @@ pfUI:RegisterModule("gui", "vanilla:tbc", function ()
               this:GetParent().category[this:GetParent().config] = this:GetText()
               if ufunc then ufunc() else pfUI.gui.settingChanged = true end
             end
-            this:SetTextColor(.2,1,.8,1)
+            this:SetTextColor(pfUI.cr,pfUI.cg,pfUI.cb,1)
           else
             this:SetTextColor(1,.3,.3,1)
           end
@@ -508,7 +508,7 @@ pfUI:RegisterModule("gui", "vanilla:tbc", function ()
 
       f:SetScript("OnShow", function()
         this.indexed = true
-        this.button.text:SetTextColor(.2,1,.8,1)
+        this.button.text:SetTextColor(pfUI.cr,pfUI.cg,pfUI.cb,1)
         this.button.bg:SetTexture(1,1,1,1)
         this.button.bg:SetGradientAlpha("HORIZONTAL", 0,0,0,0,  1,1,1,.05)
       end)
@@ -618,7 +618,7 @@ pfUI:RegisterModule("gui", "vanilla:tbc", function ()
     pfUI.gui.title:SetPoint("TOPLEFT", pfUI.gui, "TOPLEFT", 8, -8)
     pfUI.gui.title:SetJustifyH("LEFT")
     pfUI.gui.title:SetFont(pfUI.media["font:Hooge.ttf"], 10)
-    pfUI.gui.title:SetText("|cff33ffccpf|rUI")
+    pfUI.gui.title:SetText("|cff" .. (pfUI.chex or "33ffcc") .. "pf|rUI")
 
     pfUI.gui.version = pfUI.gui:CreateFontString("Status", "LOW", "GameFontNormal")
     pfUI.gui.version:SetFontObject(GameFontWhite)
@@ -713,7 +713,7 @@ pfUI:RegisterModule("gui", "vanilla:tbc", function ()
       if not this.obj[-1].highlight then
         this.obj[-1].highlight = this.obj[-1]:CreateTexture(nil, "OVERLAY")
         this.obj[-1].highlight:SetAllPoints()
-        this.obj[-1].highlight:SetTexture(.2,1,.8,.2)
+        this.obj[-1].highlight:SetTexture(pfUI.cr,pfUI.cg,pfUI.cb,.2)
       end
       this.obj[-1].highlight:Show()
     end
@@ -747,7 +747,7 @@ pfUI:RegisterModule("gui", "vanilla:tbc", function ()
     pfUI.gui.search:SetHeight(25)
     pfUI.gui.search:SetAutoFocus(false)
     pfUI.gui.search:SetTextInsets(5, 5, 5, 5)
-    pfUI.gui.search:SetTextColor(.2,1,.8,1)
+    pfUI.gui.search:SetTextColor(pfUI.cr,pfUI.cg,pfUI.cb,1)
     pfUI.gui.search:SetJustifyH("CENTER")
     pfUI.gui.search:SetFontObject(GameFontNormal)
     pfUI.gui.search:SetText(T["Search"] .. "...")
@@ -785,11 +785,12 @@ pfUI:RegisterModule("gui", "vanilla:tbc", function ()
       local search = strlower(this:GetText())
       for name, obj in pairs(searchDB) do
         local title = obj[0] and strlower(obj[0])
-        if strfind(title, search) then
+        -- plain search (4th arg true): typed "(", "[", "%" etc. must be literal, not a Lua pattern
+        if title and strfind(title, search, 1, true) then
           -- build caption string
           local caption = ""
           for x=table.getn(obj),1,-1 do
-            caption = caption .. "|cff33ffcc" .. obj[x].text:GetText() .. "|r » "
+            caption = caption .. "|cff" .. (pfUI.chex or "33ffcc") .. obj[x].text:GetText() .. "|r » "
           end
           caption = caption .. "|cffffffff" .. obj[0]
 
@@ -1305,12 +1306,12 @@ pfUI:RegisterModule("gui", "vanilla:tbc", function ()
       end
 
       local x, y, p = 250, 55, 10  -- startx, starty, pencilsize
-      draw(this, x,     -y-2*p, x+p,      -y-7*p, .2, 1, .8, 1)
-      draw(this, x+p,   -y-2*p, x+2*p,    -y-3*p, .2, 1, .8, 1)
-      draw(this, x+p,   -y-4*p, x+2*p,    -y-5*p, .2, 1, .8, 1)
-      draw(this, x+2*p, -y,     x+3*p,    -y-5*p, .2, 1, .8, 1)
-      draw(this, x+3*p, -y,     x+4*p,    -y-1*p, .2, 1, .8, 1)
-      draw(this, x+p,   -y-2*p, x+4*p,    -y-3*p, .2, 1, .8, 1)
+      draw(this, x,     -y-2*p, x+p,      -y-7*p, pfUI.cr, pfUI.cg, pfUI.cb, 1)
+      draw(this, x+p,   -y-2*p, x+2*p,    -y-3*p, pfUI.cr, pfUI.cg, pfUI.cb, 1)
+      draw(this, x+p,   -y-4*p, x+2*p,    -y-5*p, pfUI.cr, pfUI.cg, pfUI.cb, 1)
+      draw(this, x+2*p, -y,     x+3*p,    -y-5*p, pfUI.cr, pfUI.cg, pfUI.cb, 1)
+      draw(this, x+3*p, -y,     x+4*p,    -y-1*p, pfUI.cr, pfUI.cg, pfUI.cb, 1)
+      draw(this, x+p,   -y-2*p, x+4*p,    -y-3*p, pfUI.cr, pfUI.cg, pfUI.cb, 1)
       draw(this, x+4*p, -y,     x+5*p,    -y-5*p, 1,  1, 1,  1)
       draw(this, x+5*p, -y-4*p, x+5*p+p,  -y-5*p, 1,  1, 1,  1)
       draw(this, x+6*p, -y,     x+7*p,    -y-p,   1,  1, 1,  1)
@@ -1335,7 +1336,7 @@ pfUI:RegisterModule("gui", "vanilla:tbc", function ()
       this.update:SetPoint("TOPLEFT", 200, -140)
       this.update:SetPoint("TOPRIGHT", 375, -140)
       this.update:SetJustifyH("CENTER")
-      this.update:SetTextColor(.2,1,.8)
+      this.update:SetTextColor(pfUI.cr,pfUI.cg,pfUI.cb)
 
       this.screenc = this:CreateFontString("Status", "LOW", "GameFontWhite")
       this.screenc:SetFont(pfUI.font_default, C.global.font_size)
@@ -1453,7 +1454,7 @@ pfUI:RegisterModule("gui", "vanilla:tbc", function ()
       -- load profile
       CreateConfig(nil, T["Load profile"], C.global, "profile", "button", function()
         if C.global.profile and pfUI_profiles[C.global.profile] then
-          CreateQuestionDialog(T["Load profile"] .. " '|cff33ffcc" .. C.global.profile .. "|r'?", function()
+          CreateQuestionDialog(T["Load profile"] .. " '|cff" .. (pfUI.chex or "33ffcc") .. C.global.profile .. "|r'?", function()
             local selp = C.global.profile
             local rchat = C.chat.right.enable
 
@@ -1475,7 +1476,7 @@ pfUI:RegisterModule("gui", "vanilla:tbc", function ()
       -- delete profile
       CreateConfig(nil, T["Delete profile"], C.global, "profile", "button", function()
         if C.global.profile and pfUI_profiles[C.global.profile] then
-          CreateQuestionDialog(T["Delete profile"] .. " '|cff33ffcc" .. C.global.profile .. "|r'?", function()
+          CreateQuestionDialog(T["Delete profile"] .. " '|cff" .. (pfUI.chex or "33ffcc") .. C.global.profile .. "|r'?", function()
             pfUI_profiles[C.global.profile] = nil
             this:GetParent():Hide()
           end)
@@ -1485,7 +1486,7 @@ pfUI:RegisterModule("gui", "vanilla:tbc", function ()
       -- save profile
       CreateConfig(nil, T["Save profile"], C.global, "profile", "button", function()
         if C.global.profile and pfUI_profiles[C.global.profile] then
-          CreateQuestionDialog(T["Save current settings to profile"] .. " '|cff33ffcc" .. C.global.profile .. "|r'?", function()
+          CreateQuestionDialog(T["Save current settings to profile"] .. " '|cff" .. (pfUI.chex or "33ffcc") .. C.global.profile .. "|r'?", function()
             if pfUI_profiles[C.global.profile] then
               pfUI_profiles[C.global.profile] = CopyTable(C)
             end
@@ -1518,7 +1519,9 @@ pfUI:RegisterModule("gui", "vanilla:tbc", function ()
 
       CreateConfig(nil, T["Settings"], nil, nil, "header")
       CreateConfig(nil, T["Language"], C.global, "language", "dropdown", pfUI.gui.dropdowns.languages)
-      CreateConfig(U["pixelperfect"], T["Enable UI-Scale"], C.global, "pixelperfect", "dropdown", pfUI.gui.dropdowns.scaling)
+      -- no live update func on purpose: changing the UI scale invalidates every
+      -- border size already baked into existing frames, so this needs a reload
+      CreateConfig(nil, T["Enable UI-Scale"], C.global, "pixelperfect", "dropdown", pfUI.gui.dropdowns.scaling)
       CreateConfig(nil, T["Use Original Game Fonts"], C.global, "font_blizzard", "checkbox")
       CreateConfig(nil, T["Enable Region Compatible Font"], C.global, "force_region", "checkbox")
       CreateConfig(nil, T["Standard Text Font"], C.global, "font_default", "dropdown", pfUI.gui.dropdowns.fonts)
@@ -1584,6 +1587,7 @@ pfUI:RegisterModule("gui", "vanilla:tbc", function ()
     end)
 
     CreateGUIEntry(T["Settings"], T["Appearance"], function()
+      CreateConfig(nil, T["Use Class Color"], C.appearance.border, "classcolor", "checkbox")
       CreateConfig(nil, T["Background Color"], C.appearance.border, "background", "color")
       CreateConfig(nil, T["Border Color"], C.appearance.border, "color", "color")
       CreateConfig(U["mapreveal"], T["Map Reveal Color"], C.appearance.worldmap, "mapreveal_color", "color")
@@ -1674,7 +1678,7 @@ pfUI:RegisterModule("gui", "vanilla:tbc", function ()
             -- Custom selected - make editable
             targetCustom.input:EnableMouse(true)
             targetCustom.input:EnableKeyboard(true)
-            targetCustom.input:SetTextColor(.2,1,.8,1)
+            targetCustom.input:SetTextColor(pfUI.cr,pfUI.cg,pfUI.cb,1)
             if _G.pfUI_throttle.nameplates_target_custom then
               targetCustom.input:SetText(_G.pfUI_throttle.nameplates_target_custom)
             end
@@ -1703,7 +1707,7 @@ pfUI:RegisterModule("gui", "vanilla:tbc", function ()
       else
         targetCustom.input:EnableMouse(true)
         targetCustom.input:EnableKeyboard(true)
-        targetCustom.input:SetTextColor(.2,1,.8,1)
+        targetCustom.input:SetTextColor(pfUI.cr,pfUI.cg,pfUI.cb,1)
         if _G.pfUI_throttle.nameplates_target_custom then
           targetCustom.input:SetText(_G.pfUI_throttle.nameplates_target_custom)
         end
@@ -1728,7 +1732,7 @@ pfUI:RegisterModule("gui", "vanilla:tbc", function ()
           else
             normalCustom.input:EnableMouse(true)
             normalCustom.input:EnableKeyboard(true)
-            normalCustom.input:SetTextColor(.2,1,.8,1)
+            normalCustom.input:SetTextColor(pfUI.cr,pfUI.cg,pfUI.cb,1)
             if _G.pfUI_throttle.nameplates_custom then
               normalCustom.input:SetText(_G.pfUI_throttle.nameplates_custom)
             end
@@ -1755,7 +1759,7 @@ pfUI:RegisterModule("gui", "vanilla:tbc", function ()
       else
         normalCustom.input:EnableMouse(true)
         normalCustom.input:EnableKeyboard(true)
-        normalCustom.input:SetTextColor(.2,1,.8,1)
+        normalCustom.input:SetTextColor(pfUI.cr,pfUI.cg,pfUI.cb,1)
         if _G.pfUI_throttle.nameplates_custom then
           normalCustom.input:SetText(_G.pfUI_throttle.nameplates_custom)
         end
@@ -1780,7 +1784,7 @@ pfUI:RegisterModule("gui", "vanilla:tbc", function ()
           else
             castbarCustom.input:EnableMouse(true)
             castbarCustom.input:EnableKeyboard(true)
-            castbarCustom.input:SetTextColor(.2,1,.8,1)
+            castbarCustom.input:SetTextColor(pfUI.cr,pfUI.cg,pfUI.cb,1)
             if _G.pfUI_throttle.nameplates_castbar_custom then
               castbarCustom.input:SetText(_G.pfUI_throttle.nameplates_castbar_custom)
             end
@@ -1816,7 +1820,7 @@ pfUI:RegisterModule("gui", "vanilla:tbc", function ()
           else
             massCustom.input:EnableMouse(true)
             massCustom.input:EnableKeyboard(true)
-            massCustom.input:SetTextColor(.2,1,.8,1)
+            massCustom.input:SetTextColor(pfUI.cr,pfUI.cg,pfUI.cb,1)
             if _G.pfUI_throttle.nameplates_mass_custom then
               massCustom.input:SetText(_G.pfUI_throttle.nameplates_mass_custom)
             end
@@ -1843,7 +1847,7 @@ pfUI:RegisterModule("gui", "vanilla:tbc", function ()
       else
         massCustom.input:EnableMouse(true)
         massCustom.input:EnableKeyboard(true)
-        massCustom.input:SetTextColor(.2,1,.8,1)
+        massCustom.input:SetTextColor(pfUI.cr,pfUI.cg,pfUI.cb,1)
         if _G.pfUI_throttle.nameplates_mass_custom then
           massCustom.input:SetText(_G.pfUI_throttle.nameplates_mass_custom)
         end
@@ -1886,7 +1890,7 @@ pfUI:RegisterModule("gui", "vanilla:tbc", function ()
           else
             cursorCustom.input:EnableMouse(true)
             cursorCustom.input:EnableKeyboard(true)
-            cursorCustom.input:SetTextColor(.2,1,.8,1)
+            cursorCustom.input:SetTextColor(pfUI.cr,pfUI.cg,pfUI.cb,1)
             if _G.pfUI_throttle.tooltip_cursor_custom then
               cursorCustom.input:SetText(_G.pfUI_throttle.tooltip_cursor_custom)
             end
@@ -1913,7 +1917,7 @@ pfUI:RegisterModule("gui", "vanilla:tbc", function ()
       else
         cursorCustom.input:EnableMouse(true)
         cursorCustom.input:EnableKeyboard(true)
-        cursorCustom.input:SetTextColor(.2,1,.8,1)
+        cursorCustom.input:SetTextColor(pfUI.cr,pfUI.cg,pfUI.cb,1)
         if _G.pfUI_throttle.tooltip_cursor_custom then
           cursorCustom.input:SetText(_G.pfUI_throttle.tooltip_cursor_custom)
         end
@@ -1956,7 +1960,7 @@ pfUI:RegisterModule("gui", "vanilla:tbc", function ()
           else
             chatCustom.input:EnableMouse(true)
             chatCustom.input:EnableKeyboard(true)
-            chatCustom.input:SetTextColor(.2,1,.8,1)
+            chatCustom.input:SetTextColor(pfUI.cr,pfUI.cg,pfUI.cb,1)
             if _G.pfUI_throttle.chat_tab_custom then
               chatCustom.input:SetText(_G.pfUI_throttle.chat_tab_custom)
             end
@@ -1983,7 +1987,7 @@ pfUI:RegisterModule("gui", "vanilla:tbc", function ()
       else
         chatCustom.input:EnableMouse(true)
         chatCustom.input:EnableKeyboard(true)
-        chatCustom.input:SetTextColor(.2,1,.8,1)
+        chatCustom.input:SetTextColor(pfUI.cr,pfUI.cg,pfUI.cb,1)
         if _G.pfUI_throttle.chat_tab_custom then
           chatCustom.input:SetText(_G.pfUI_throttle.chat_tab_custom)
         end
@@ -2017,7 +2021,7 @@ pfUI:RegisterModule("gui", "vanilla:tbc", function ()
           else
             swingCustom.input:EnableMouse(true)
             swingCustom.input:EnableKeyboard(true)
-            swingCustom.input:SetTextColor(.2,1,.8,1)
+            swingCustom.input:SetTextColor(pfUI.cr,pfUI.cg,pfUI.cb,1)
             if _G.pfUI_throttle.swingtimer_custom then
               swingCustom.input:SetText(_G.pfUI_throttle.swingtimer_custom)
             end
@@ -2044,7 +2048,7 @@ pfUI:RegisterModule("gui", "vanilla:tbc", function ()
       else
         swingCustom.input:EnableMouse(true)
         swingCustom.input:EnableKeyboard(true)
-        swingCustom.input:SetTextColor(.2,1,.8,1)
+        swingCustom.input:SetTextColor(pfUI.cr,pfUI.cg,pfUI.cb,1)
         if _G.pfUI_throttle.swingtimer_custom then
           swingCustom.input:SetText(_G.pfUI_throttle.swingtimer_custom)
         end
@@ -2169,6 +2173,8 @@ pfUI:RegisterModule("gui", "vanilla:tbc", function ()
       CreateConfig(nil, T["Show Distance of Target"], C.unitframes, "distance_indicator", "checkbox", nil, nil, nil, nil, "vanilla" )
       CreateConfig(nil, T["Hide yd characters"], C.unitframes, "hide_distance_yd", "checkbox", nil, nil, nil, nil, "vanilla" )
       CreateConfig(nil, T["Hook Distance to Portrait Frame"], C.unitframes, "distance_hook_portrait", "checkbox", nil, nil, nil, nil, "vanilla" )
+      CreateConfig(nil, T["Distance Panel Width"], C.unitframes, "distance_width", nil, nil, nil, nil, nil, "vanilla" )
+      CreateConfig(nil, T["Distance Panel Height"], C.unitframes, "distance_height", nil, nil, nil, nil, nil, "vanilla" )
       CreateConfig(nil, T["Enable OS Notifications"], C.unitframes, "unitxp_notify", "checkbox", nil, nil, nil, nil, "vanilla" )
     end)
 
@@ -2249,6 +2255,8 @@ pfUI:RegisterModule("gui", "vanilla:tbc", function ()
         CreateConfig(U[c], T["Portrait Position"], C.unitframes[c], "portrait", "dropdown", pfUI.gui.dropdowns.uf_portrait_position)
         CreateConfig(U[c], T["Portrait Width"], C.unitframes[c], "portraitwidth")
         CreateConfig(U[c], T["Portrait Height"], C.unitframes[c], "portraitheight")
+        CreateConfig(U[c], T["Portrait X-Offset"], C.unitframes[c], "portraitoffx")
+        CreateConfig(U[c], T["Portrait Y-Offset"], C.unitframes[c], "portraitoffy")
         CreateConfig(U[c], T["Health Bar Texture"], C.unitframes[c], "bartexture", "dropdown", pfUI.gui.dropdowns.uf_bartexture)
         CreateConfig(U[c], T["Power Bar Texture"], C.unitframes[c], "pbartexture", "dropdown", pfUI.gui.dropdowns.uf_bartexture)
         CreateConfig(U[c], T["UnitFrame Spacing"], C.unitframes[c], "pspace")
@@ -2333,12 +2341,16 @@ pfUI:RegisterModule("gui", "vanilla:tbc", function ()
         CreateConfig(U[c], T["Buff Size"], C.unitframes[c], "buffsize")
         CreateConfig(U[c], T["Buff Limit"], C.unitframes[c], "bufflimit")
         CreateConfig(U[c], T["Buffs Per Row"], C.unitframes[c], "buffperrow")
+        CreateConfig(U[c], T["Buff X-Offset"], C.unitframes[c], "buffoffx")
+        CreateConfig(U[c], T["Buff Y-Offset"], C.unitframes[c], "buffoffy")
 
         CreateConfig(U[c], T["Debuffs"], nil, nil, "header")
         CreateConfig(U[c], T["Debuff Position"], C.unitframes[c], "debuffs", "dropdown", pfUI.gui.dropdowns.uf_buff_position)
         CreateConfig(U[c], T["Debuff Size"], C.unitframes[c], "debuffsize")
         CreateConfig(U[c], T["Debuff Limit"], C.unitframes[c], "debufflimit")
         CreateConfig(U[c], T["Debuffs Per Row"], C.unitframes[c], "debuffperrow")
+        CreateConfig(U[c], T["Debuff X-Offset"], C.unitframes[c], "debuffoffx")
+        CreateConfig(U[c], T["Debuff Y-Offset"], C.unitframes[c], "debuffoffy")
 
         if c ~= "player" then
         end
@@ -2416,7 +2428,7 @@ pfUI:RegisterModule("gui", "vanilla:tbc", function ()
       CreateConfig(nil, T["Hide Chat When Bags Are Opened"], C.appearance.bags, "hidechat", "checkbox")
       CreateConfig(nil, T["Bagslots Per Row"], C.appearance.bags, "bagrowlength")
       CreateConfig(nil, T["Bankslots Per Row"], C.appearance.bags, "bankrowlength")
-      CreateConfig(nil, T["Enable Full-Text Search"], C.appearance.bags, "fulltext")
+      CreateConfig(nil, T["Enable Full-Text Search"], C.appearance.bags, "fulltext", "checkbox")
       CreateConfig(nil, T["Item Slot Size"], C.appearance.bags, "icon_size")
       CreateConfig(nil, T["Auto Sell Grey Items"], C.global, "autosell", "checkbox")
       CreateConfig(nil, T["Auto Repair Items"], C.global, "autorepair", "checkbox")
@@ -2441,7 +2453,6 @@ pfUI:RegisterModule("gui", "vanilla:tbc", function ()
       CreateConfig(nil, T["Show PvP Icon"], C.unitframes.player, "showPVPMinimap", "checkbox")
       CreateConfig(nil, T["Show Inactive Tracking"], C.appearance.minimap, "tracking_pulse", "checkbox")
       CreateConfig(nil, T["Tracking Icon Size"], C.appearance.minimap, "tracking_size")
-      CreateConfig(nil, T["Hide Addon Buttons On Combat"], C.appearance.minimap, "addon_buttons", "checkbox")
     end)
 
     CreateGUIEntry(T["Minimap"], T["Addon Buttons"], function()
@@ -2776,6 +2787,7 @@ pfUI:RegisterModule("gui", "vanilla:tbc", function ()
       CreateConfig(nil, T["Show Spell Icon"], C.castbar.player, "showicon", "checkbox")
       CreateConfig(nil, T["Show Spell Name"], C.castbar.player, "showname", "checkbox")
       CreateConfig(nil, T["Show Timer"], C.castbar.player, "showtimer", "checkbox")
+      CreateConfig(nil, T["Hide Total Timer"], C.castbar.player, "hidetotaltimer", "checkbox")
       CreateConfig(nil, T["Left Text X Offset"], C.castbar.player, "txtleftoffx")
       CreateConfig(nil, T["Left Text Y Offset"], C.castbar.player, "txtleftoffy")
       CreateConfig(nil, T["Show Lag"], C.castbar.player, "showlag", "checkbox")
@@ -2790,6 +2802,7 @@ pfUI:RegisterModule("gui", "vanilla:tbc", function ()
       CreateConfig(nil, T["Show Spell Icon"], C.castbar.target, "showicon", "checkbox")
       CreateConfig(nil, T["Show Spell Name"], C.castbar.target, "showname", "checkbox")
       CreateConfig(nil, T["Show Timer"], C.castbar.target, "showtimer", "checkbox")
+      CreateConfig(nil, T["Hide Total Timer"], C.castbar.target, "hidetotaltimer", "checkbox")
       CreateConfig(nil, T["Left Text X Offset"], C.castbar.target, "txtleftoffx")
       CreateConfig(nil, T["Left Text Y Offset"], C.castbar.target, "txtleftoffy")
       CreateConfig(nil, T["Show Lag"], C.castbar.target, "showlag", "checkbox")
@@ -2804,6 +2817,7 @@ pfUI:RegisterModule("gui", "vanilla:tbc", function ()
       CreateConfig(nil, T["Show Spell Icon"], C.castbar.focus, "showicon", "checkbox")
       CreateConfig(nil, T["Show Spell Name"], C.castbar.focus, "showname", "checkbox")
       CreateConfig(nil, T["Show Timer"], C.castbar.focus, "showtimer", "checkbox")
+      CreateConfig(nil, T["Hide Total Timer"], C.castbar.focus, "hidetotaltimer", "checkbox")
       CreateConfig(nil, T["Left Text X Offset"], C.castbar.focus, "txtleftoffx")
       CreateConfig(nil, T["Left Text Y Offset"], C.castbar.focus, "txtleftoffy")
       CreateConfig(nil, T["Show Lag"], C.castbar.focus, "showlag", "checkbox")
@@ -2862,6 +2876,7 @@ pfUI:RegisterModule("gui", "vanilla:tbc", function ()
       CreateConfig(U["nameplates"], T["Show On Friendly Units"], C.nameplates, "showfriendly", "checkbox")
       CreateConfig(U["nameplates"], T["Disable Hostile Nameplates In Friendly Zones"], C.nameplates, "disable_hostile_in_friendly", "checkbox")
       CreateConfig(U["nameplates"], T["Disable Friendly Nameplates In Friendly Zones"], C.nameplates, "disable_friendly_in_friendly", "checkbox")
+      CreateConfig(U["nameplates"], T["Hide Nameplates Out Of Combat"], C.nameplates, "hide_out_of_combat", "checkbox")
       CreateConfig(U["nameplates"], T["Vertical Offset (|cffffaaaaExperimental|r)"], C.nameplates, "vertical_offset", nil, nil, nil, nil, nil, "vanilla")
       CreateConfig(U["nameplates"], T["Inactive Nameplate Alpha"], C.nameplates, "notargalpha", "dropdown", pfUI.gui.dropdowns.percent_small)
       CreateConfig(U["nameplates"], T["Draw Glow Around Target Nameplate"], C.nameplates, "targetglow", "checkbox")

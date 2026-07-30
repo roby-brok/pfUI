@@ -214,6 +214,10 @@ pfUI:RegisterModule("nampower", "vanilla", function ()
       UpdateMovable(pfUI.reactive)
 
       pfUI.reactive:SetScript("OnUpdate", function()
+        -- throttle: reactive usability rarely changes within 0.1s; this saves up to
+        -- 3 IsSpellUsable DLL calls + Show/Hide churn every frame
+        if (this.tick or 0) > GetTime() then return end
+        this.tick = GetTime() + 0.1
         local anyVisible = false
         for _, icon in ipairs(this.icons) do
           local usable = IsSpellUsable(icon.spellName)
@@ -444,7 +448,8 @@ pfUI:RegisterModule("nampower", "vanilla", function ()
         schoolMask = rec.schoolMask or 0,
         runeCostID = rec.runeCostID or 0,
         spellMissileID = rec.spellMissileID or 0,
-        iconID = rec.iconID or 0,
+        iconID = rec.iconID or rec.spellIconID or 0,
+        spellIconID = rec.spellIconID or rec.iconID or 0, -- consumers read spellIconID
         activeIconID = rec.activeIconID or 0,
         nameSubtext = rec.nameSubtext or "",
         castingTimeIndex = rec.castingTimeIndex or 0,
@@ -478,11 +483,11 @@ pfUI:RegisterModule("nampower", "vanilla", function ()
       DisenchantAll()
     end
 
-    SLASH_PFDISENCHANTALL1 = "/disenchantall"
-    SLASH_PFDISENCHANTALL2 = "/dea"
+    _G.SLASH_PFDISENCHANTALL1 = "/disenchantall"
+    _G.SLASH_PFDISENCHANTALL2 = "/dea"
     SlashCmdList["PFDISENCHANTALL"] = function()
       DisenchantAll()
-      DEFAULT_CHAT_FRAME:AddMessage("|cff33ffccpfUI|r: Disenchanting all eligible items...")
+      DEFAULT_CHAT_FRAME:AddMessage("|cff" .. (pfUI.chex or "33ffcc") .. "pfUI|r: Disenchanting all eligible items...")
     end
   end
 

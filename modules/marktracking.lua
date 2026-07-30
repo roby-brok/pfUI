@@ -301,13 +301,19 @@ pfUI.marktracking = CreateFrame("Frame", "pfMarkTracking", UIParent)
   scanner:RegisterEvent("UNIT_HEALTH")
   scanner:RegisterEvent("UNIT_MAXHEALTH")
 
+  -- Coalesce event bursts (UNIT_HEALTH/UNIT_MAXHEALTH storm in raids) into at most
+  -- one refresh per 0.2s instead of a full relayout per health tick.
   scanner:SetScript("OnEvent", function()
-    UpdateDisplay()
+    if not this.nextEvent then this.nextEvent = GetTime() + 0.2 end
   end)
 
   -- Fallback poll at 1s: catches units that come into range AFTER a marker was set
   -- (no event fires for that case, so we need this safety net)
   scanner:SetScript("OnUpdate", function()
+    if this.nextEvent and GetTime() >= this.nextEvent then
+      this.nextEvent = nil
+      UpdateDisplay()
+    end
     elapsed = elapsed + arg1
     if elapsed < FALLBACK_INTERVAL then return end
     elapsed = 0

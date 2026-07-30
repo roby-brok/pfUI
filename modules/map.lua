@@ -50,9 +50,11 @@ pfUI:RegisterModule("map", "vanilla:tbc", function ()
     WorldMapFrame:EnableMouse(true)
     WorldMapFrame:RegisterForDrag("LeftButton")
 
-    -- make sure the hooks get only applied once
-    if not this.hooked then
-      this.hooked = true
+    -- make sure the hooks get only applied once. Reference the loader frame
+    -- directly (not `this`): turtle-wow.lua re-invokes this OnEvent with a direct
+    -- call where `this` is a different frame, which would otherwise double-hook.
+    if not pfMapLoader.hooked then
+      pfMapLoader.hooked = true
 
       HookScript(WorldMapFrame, "OnShow", function()
         -- customize
@@ -70,6 +72,8 @@ pfUI:RegisterModule("map", "vanilla:tbc", function ()
         if IsShiftKeyDown() then
           alpha = clamp(WorldMapFrame:GetAlpha() + arg1/10, 0.1, 1.0)
           WorldMapFrame:SetAlpha(alpha)
+          -- persist: SaveMovable stores scale/position but not alpha
+          C.position["WorldMapFrame"].alpha = alpha
         end
 
         if IsControlKeyDown() then

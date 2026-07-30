@@ -100,13 +100,14 @@ pfUI:RegisterSkin("Help", "vanilla:tbc", function ()
   TicketStatusFrame:ClearAllPoints()
   TicketStatusFrame:SetPoint("TOP", 0, -5)
   UpdateMovable(TicketStatusFrame)
-  function TicketStatusFrame_OnEvent()
+  -- must be the real global (skins run setfenv'd): the XML OnEvent resolves _G
+  _G.TicketStatusFrame_OnEvent = function()
     if ( event == "PLAYER_ENTERING_WORLD" ) then
       GetGMTicket()
     else
       if ( arg1 ~= 0 ) then
         this:Show()
-        refreshTime = GMTICKET_CHECK_INTERVAL
+        _G.refreshTime = GMTICKET_CHECK_INTERVAL
       else
         this:Hide()
       end

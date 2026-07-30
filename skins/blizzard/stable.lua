@@ -28,11 +28,16 @@ pfUI:RegisterSkin("Pet Stable Master", "vanilla:tbc", function ()
     StripTextures(button)
     SkinButton(button, nil, nil, nil, _G[button:GetName().."IconTexture"])
 
+    -- keep the real Enable/Disable so slots Blizzard disables (unpurchased) can't
+    -- be clicked; only add the recolor on top
+    local origEnable, origDisable = button.Enable, button.Disable
     button.Enable = function()
+      if origEnable then origEnable(button) end
       button:SetBackdropColor()
       button.locked = false
     end
     button.Disable = function()
+      if origDisable then origDisable(button) end
       button:SetBackdropColor(1, .1, .1, .3)
       button.locked = true
     end

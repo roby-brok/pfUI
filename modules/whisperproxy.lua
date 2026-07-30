@@ -27,12 +27,12 @@ pfUI:RegisterModule("whisperproxy", "vanilla", function ()
       -- redirect inactive
       proxy.enabled = false
       proxy.tex:SetVertexColor(.5,.5,.5,1)
-      DEFAULT_CHAT_FRAME:AddMessage(T["Messages are no longer forwarded to:"] .. " |cff33ffcc" .. proxy.forwardto)
+      DEFAULT_CHAT_FRAME:AddMessage(T["Messages are no longer forwarded to:"] .. " |cff" .. (pfUI.chex or "33ffcc") .. proxy.forwardto)
     elseif proxy.forwardto ~= "" then
       -- redirect active
       proxy.enabled = true
       proxy.tex:SetVertexColor(1,.8,0,1)
-      DEFAULT_CHAT_FRAME:AddMessage(T["All messages will be forwarded to:"] .. " |cff33ffcc" .. proxy.forwardto)
+      DEFAULT_CHAT_FRAME:AddMessage(T["All messages will be forwarded to:"] .. " |cff" .. (pfUI.chex or "33ffcc") .. proxy.forwardto)
     end
   end
 

@@ -120,7 +120,7 @@ pfUI:RegisterModule("player", "vanilla:tbc", function ()
       end
     end
 
-    if showSP and isSpellCaster then
+    if showSP and isSpellCaster and GetSpellPower then
       local schools = { GetSpellPower("net") }
       local defSchool = spDefaultSchool[myclass] or 2
       local maxSP = schools[defSchool] or 0
@@ -145,15 +145,16 @@ pfUI:RegisterModule("player", "vanilla:tbc", function ()
   -- Keep a reference to the generic UF UpdateConfig so we can chain it
   local genericUpdateConfig = pfUI.uf.UpdateConfig
 
-  function playerFrame:UpdateConfig()
-    genericUpdateConfig(self)
-    UpdateInfoText()
-  end
-
-  -- Add throttle to player frame OnUpdate
-  if pfUI.uf.player:GetScript("OnUpdate") then
-    local originalOnUpdate = pfUI.uf.player:GetScript("OnUpdate")
-    pfUI.uf.player:SetScript("OnUpdate", function()
+  -- Wrap the player frame's OnUpdate with our throttle + haste/SP info-text tick.
+  -- pfUI.uf.UpdateConfig -> EnableScripts resets OnUpdate to the raw handler, so
+  -- this must be re-applied after every UpdateConfig or the wrapper is lost until
+  -- reload. The marker upvalue prevents wrapping our own wrapper twice.
+  local pfPlayerOnUpdate
+  local function InstallPlayerOnUpdate()
+    local current = pfUI.uf.player:GetScript("OnUpdate")
+    if not current or current == pfPlayerOnUpdate then return end
+    local originalOnUpdate = current
+    pfPlayerOnUpdate = function()
       if (this.throttleTick or 0) > GetTime() then
         return
       end
@@ -163,8 +164,18 @@ pfUI:RegisterModule("player", "vanilla:tbc", function ()
         this.infoTextTick = GetTime() + 0.25 -- Don't need to update haste/SP text as often
         UpdateInfoText()
       end
-    end)
+    end
+    pfUI.uf.player:SetScript("OnUpdate", pfPlayerOnUpdate)
   end
+
+  function playerFrame:UpdateConfig()
+    genericUpdateConfig(self)
+    UpdateInfoText()
+    InstallPlayerOnUpdate()
+  end
+
+  -- initial install
+  InstallPlayerOnUpdate()
 
   -- Replace default's RESET_INSTANCES button with an always working one
   UnitPopupButtons["RESET_INSTANCES_FIX"] = { text = RESET_INSTANCES, dist = 0 }

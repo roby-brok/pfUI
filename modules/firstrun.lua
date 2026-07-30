@@ -82,7 +82,7 @@ pfUI:RegisterModule("firstrun", "vanilla:tbc", function ()
     f.progress:SetPoint("BOTTOMRIGHT", -100, 10)
     f.progress:SetHeight(12)
     f.progress:SetStatusBarTexture(pfUI.media["img:bar"])
-    f.progress:SetStatusBarColor(.2,1,.8,1)
+    f.progress:SetStatusBarColor(pfUI.cr,pfUI.cg,pfUI.cb,1)
     f.progress:SetMinMaxValues(1,9)
     f.progress:SetValue(3)
     CreateBackdrop(f.progress)
@@ -258,7 +258,7 @@ pfUI:RegisterModule("firstrun", "vanilla:tbc", function ()
     SkinCheckbox(f.checkbox, 18)
 
     f.NextScript = function()
-      if not pfUI.chat then message("Couldn't apply settings. Chat module is disabled.") end
+      if not pfUI.chat then message("Couldn't apply settings. Chat module is disabled.") return end
       pfUI.chat.SetupRightChat(f.checkbox:GetChecked())
     end
 
@@ -278,7 +278,7 @@ pfUI:RegisterModule("firstrun", "vanilla:tbc", function ()
     SkinCheckbox(f.checkbox, 18)
 
     f.NextScript = function()
-      if not pfUI.chat then message("Couldn't apply settings. Chat module is disabled.") end
+      if not pfUI.chat then message("Couldn't apply settings. Chat module is disabled.") return end
       if f.checkbox:GetChecked() then
         pfUI.chat.SetupPositions()
       end
@@ -300,7 +300,7 @@ pfUI:RegisterModule("firstrun", "vanilla:tbc", function ()
     SkinCheckbox(f.checkbox, 18)
 
     f.NextScript = function()
-      if not pfUI.chat then message("Couldn't apply settings. Chat module is disabled.") end
+      if not pfUI.chat then message("Couldn't apply settings. Chat module is disabled.") return end
       if f.checkbox:GetChecked() then
         pfUI.chat.SetupChannels()
       end

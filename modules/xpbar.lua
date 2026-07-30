@@ -62,7 +62,7 @@ local function OnEnter(self)
       table.insert(lines, { T["Rested"], "|cff5555ff+" .. exh .. " (" .. exh_perc .. "%)" })
       if exh_perc >= 112 then
         table.insert(lines, { "|cffff8800" .. exh_perc .. "% is the current max cap." })
-        table.insert(lines, { "|cffff8800Report to TWoW if you want a proper display." })
+        table.insert(lines, { "|cffff8800Report to OctoWoW if you want a proper display." })
       end
     end
     table.insert(lines, { "" })

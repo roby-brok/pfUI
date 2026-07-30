@@ -295,7 +295,7 @@ pfUI:RegisterModule("unlock", "vanilla:tbc", function ()
     pfUI.unlock.dock.parent = frame
 
     if frame then
-      pfUI.unlock.dock.parent.backdrop:SetBackdropBorderColor(.2,1,.8,1)
+      pfUI.unlock.dock.parent.backdrop:SetBackdropBorderColor(pfUI.cr,pfUI.cg,pfUI.cb,1)
       pfUI.unlock.dock:Show()
       UpdateDockValues()
     else
@@ -330,7 +330,7 @@ pfUI:RegisterModule("unlock", "vanilla:tbc", function ()
     for id, frame in pairs(pfUI.unlock.selection) do
       frame:StartMoving()
       frame:StopMovingOrSizing()
-      frame.drag.backdrop:SetBackdropBorderColor(.2,1,.8,1)
+      frame.drag.backdrop:SetBackdropBorderColor(pfUI.cr,pfUI.cg,pfUI.cb,1)
     end
 
     local anchor, _, _, xpos, ypos = frame:GetPoint()
@@ -681,7 +681,7 @@ pfUI:RegisterModule("unlock", "vanilla:tbc", function ()
 
     QueueFunction(SetDockToFrame, pfUI.unlock.dock.parent)
   end)
-  SkinButton(pfUI.unlock.dock.reset,.2,1,.8)
+  SkinButton(pfUI.unlock.dock.reset,pfUI.cr,pfUI.cg,pfUI.cb)
 
   -- move left
   pfUI.unlock.dock.left = CreateFrame("Button", "pfDragDockPosUp", pfUI.unlock.dock, "UIPanelButtonTemplate")
@@ -700,7 +700,7 @@ pfUI:RegisterModule("unlock", "vanilla:tbc", function ()
     SavePosition(frame)
     UpdateDockValues()
   end)
-  SkinButton(pfUI.unlock.dock.left,.2,1,.8)
+  SkinButton(pfUI.unlock.dock.left,pfUI.cr,pfUI.cg,pfUI.cb)
 
   -- move right
   pfUI.unlock.dock.right = CreateFrame("Button", "pfDragDockPosUp", pfUI.unlock.dock, "UIPanelButtonTemplate")
@@ -719,7 +719,7 @@ pfUI:RegisterModule("unlock", "vanilla:tbc", function ()
     SavePosition(frame)
     UpdateDockValues()
   end)
-  SkinButton(pfUI.unlock.dock.right,.2,1,.8)
+  SkinButton(pfUI.unlock.dock.right,pfUI.cr,pfUI.cg,pfUI.cb)
 
   -- move up
   pfUI.unlock.dock.up = CreateFrame("Button", "pfDragDockPosUp", pfUI.unlock.dock, "UIPanelButtonTemplate")
@@ -738,7 +738,7 @@ pfUI:RegisterModule("unlock", "vanilla:tbc", function ()
     SavePosition(frame)
     UpdateDockValues()
   end)
-  SkinButton(pfUI.unlock.dock.up,.2,1,.8)
+  SkinButton(pfUI.unlock.dock.up,pfUI.cr,pfUI.cg,pfUI.cb)
 
   -- move down
   pfUI.unlock.dock.down = CreateFrame("Button", "pfDragDockPosUp", pfUI.unlock.dock, "UIPanelButtonTemplate")
@@ -757,7 +757,7 @@ pfUI:RegisterModule("unlock", "vanilla:tbc", function ()
     SavePosition(frame)
     UpdateDockValues()
   end)
-  SkinButton(pfUI.unlock.dock.down,.2,1,.8)
+  SkinButton(pfUI.unlock.dock.down,pfUI.cr,pfUI.cg,pfUI.cb)
 
   -- open config
   pfUI.unlock.dock.config = CreateFrame("Button", "pfDragDockConfigOpen", pfUI.unlock.dock, "UIPanelButtonTemplate")
@@ -769,5 +769,5 @@ pfUI:RegisterModule("unlock", "vanilla:tbc", function ()
     local cat, conf = GetConfigTable(pfUI.unlock.dock.parent.label)
     if cat then OpenConfigDialog(cat, conf) end
   end)
-  SkinButton(pfUI.unlock.dock.config,.2,1,.8)
+  SkinButton(pfUI.unlock.dock.config,pfUI.cr,pfUI.cg,pfUI.cb)
 end)

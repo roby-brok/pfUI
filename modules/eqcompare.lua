@@ -104,7 +104,7 @@ pfUI:RegisterModule("eqcompare", "vanilla", function ()
         local text = widget:GetText()
         if text and not string.find(text, "-", 1, true) then
           local start = 1
-          if startsWith(text, "\+") or startsWith(text, "\(") then start = 2 end
+          if startsWith(text, "+") or startsWith(text, "(") then start = 2 end
 
           local space = string.find(text, " ", 1, true)
           if space then

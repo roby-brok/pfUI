@@ -11,23 +11,31 @@ pfUI:RegisterModule("pixelperfect", "vanilla:tbc", function ()
   -- pixel perfect
   local function pixelperfect()
     local conf = tonumber(C.global.pixelperfect)
+    local target
+
     if conf < 4 then
       -- restore gamesettings
       local scale = GetCVar("uiScale")
       local use = GetCVar("useUiScale")
 
-      if use == 1 then
-        UIParent:SetScale(tonumber(use))
-      else
-        UIParent:SetScale(.9)
-      end
+      -- GetCVar returns strings; when the user has UI scaling enabled, restore
+      -- their configured uiScale, otherwise fall back to 0.9
+      target = use == "1" and (tonumber(scale) or .9) or .9
     else
-      local scale = conf and statics[conf] or 1
+      target = statics[conf] or 1
 
-      SetCVar("uiScale", scale)
+      SetCVar("uiScale", target)
       SetCVar("useUiScale", 1)
+    end
 
-      UIParent:SetScale(scale)
+    if UIParent:GetScale() ~= target then
+      UIParent:SetScale(target)
+
+      -- GetPerfectPixel caches a real pixel for the scale that was active when
+      -- it first ran. Drop that cache (and every border size derived from it)
+      -- so frames built after this point measure against the new scale.
+      pfUI.pixel = nil
+      pfUI.borders = nil
     end
   end
 

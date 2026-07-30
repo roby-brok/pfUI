@@ -41,25 +41,41 @@ function hooksecurefunc(tbl, name, func, prepend)
 
   if not tbl or not tbl[name] then return end
 
-  pfUI.hooks[tostring(func)] = {}
-  pfUI.hooks[tostring(func)]["old"] = tbl[name]
-  pfUI.hooks[tostring(func)]["new"] = func
+  -- Capture old/new as upvalues. The registry is keyed by tostring(func), so if
+  -- the same function object is hooked onto two different targets, the second
+  -- registration would overwrite the first's "old"; reading from upvalues instead
+  -- of the shared registry at call time keeps each wrapper correct.
+  local old, new = tbl[name], func
 
+  -- keep the registry entry for external inspection / back-compat
+  pfUI.hooks[tostring(func)] = { ["old"] = old, ["new"] = new }
+
+  local hooked
   if prepend then
-    pfUI.hooks[tostring(func)]["function"] = function(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16)
-      pfUI.hooks[tostring(func)]["new"](a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16)
-      return pfUI.hooks[tostring(func)]["old"](a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16)
+    hooked = function(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16)
+      -- run our hook protected so its error can't stop the original from running
+      local hok, herr = pcall(new, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16)
+      if not hok and PF_DEBUG_MODE and type(herr) == "string" and geterrorhandler then geterrorhandler()(herr) end
+      return old(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16)
     end
   else
-    pfUI.hooks[tostring(func)]["function"] = function(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16)
-      local ok, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, r13, r14, r15, r16 = pcall(pfUI.hooks[tostring(func)]["old"], a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16)
-      if not ok then return end
-      pfUI.hooks[tostring(func)]["new"](a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16)
-      return r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, r13, r14, r15, r16
+    hooked = function(a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16)
+      local ok, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, r13, r14, r15, r16 = pcall(old, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16)
+      -- Run our hook under pcall as well, and ALWAYS run it -- even if the original
+      -- (or an earlier hook in the chain) errored. The old code did a bare `return`
+      -- when the original failed, which silently skipped THIS hook and every
+      -- later-registered one on the same function, on every call.
+      local hok, herr = pcall(new, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16)
+      if PF_DEBUG_MODE and geterrorhandler then
+        if not ok  and type(r1)   == "string" then geterrorhandler()(r1) end
+        if not hok and type(herr) == "string" then geterrorhandler()(herr) end
+      end
+      if ok then return r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, r13, r14, r15, r16 end
     end
   end
 
-  tbl[name] = pfUI.hooks[tostring(func)]["function"]
+  pfUI.hooks[tostring(func)]["function"] = hooked
+  tbl[name] = hooked
 end
 
 do -- GetItemInfo

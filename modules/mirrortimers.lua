@@ -10,6 +10,8 @@ pfUI:RegisterModule("mirrortimers", "vanilla:tbc", function ()
     frame:SetHeight(height)
     frame:SetScript("OnUpdate", function()
       if this.paused or not this.timer then return end
+      -- OctoWoW's FrameXML MirrorTimerFrame_OnUpdate uses the (frame, elapsed)
+      -- signature, so pass the frame explicitly. (Do NOT change to arg1-only.)
       MirrorTimerFrame_OnUpdate(this, arg1)
 
       local text = this.label:GetText()

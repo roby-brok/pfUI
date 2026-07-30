@@ -20,8 +20,9 @@ pfUI:RegisterModule("turtle-wow", "vanilla", function ()
   if C.unitframes.disable == "1" then
     -- pfUI unit frames are completely off, let Turtle handle everything
   else
-    -- Set GROUP_REPLACE_PARTY early so Turtle's own init can use it
-    GROUP_REPLACE_PARTY = "1"
+    -- Set GROUP_REPLACE_PARTY early so Turtle's own init can use it. Must go to
+    -- _G: Turtle's FrameXML reads the real global, and pfUI's env has no __newindex.
+    _G.GROUP_REPLACE_PARTY = "1"
 
     -- Hide Turtle GroupUI frames and disable mouse when pfUI handles group/raid.
     -- When pfUI does NOT handle them, we simply don't interfere - Turtle manages itself.
@@ -251,6 +252,10 @@ pfUI:RegisterModule("turtle-wow", "vanilla", function ()
           sh = sh >= 24 and sh - 24 or sh
         end
         
+        -- keep the 24-hour zone hour for the day/night color test below; the
+        -- am/pm block rewrites zh to 1-12 and would misread evening hours as day
+        local zh24 = zh
+
         -- perform am/pm calculations
         if C.global.twentyfour == "0" then
           local zn, sn = " AM", " AM"
@@ -285,7 +290,7 @@ pfUI:RegisterModule("turtle-wow", "vanilla", function ()
         
         -- pick color for zone time based on day/night
         local zoneColor
-        if zh >= 6 and zh < 18 then
+        if zh24 >= 6 and zh24 < 18 then
           zoneColor = "|cffffbb00"  -- orange (day)
         else
           zoneColor = "|cff0074FF"  -- blue (night)
@@ -439,7 +444,11 @@ pfUI:RegisterModule("turtle-wow", "vanilla", function ()
 
   -- add turtle-wow overlay values
   -- coordinates from paokkerkir/ShaguTweaks-extras, measured for TurtleWoW 1.18.1
-  pfMapOverlayData = {
+  -- DEAD DATA: modules/mapreveal.lua captures env/tables.lua's (newer, superset)
+  -- pfMapOverlayData before this module loads, so this copy is never read. The
+  -- `nil and {...}` short-circuits the constructor so we don't allocate ~800
+  -- throwaway tables at every login; the literal is kept below for reference.
+  local pfMapOverlayData = nil and {
     ["Durotar"] = {
       "DRYGULCHRAVINE:139:134:438:92",
       "ECHOISLES:175:236:561:432",

@@ -23,9 +23,9 @@ pfUI:RegisterModule("easteregg", "vanilla:tbc", function ()
       end
     end)
 
-    _G.MARKED_AFK           = "You are now |cff33ffcc" .. title .. "|r (AFK)."
-    _G.MARKED_AFK_MESSAGE   = "You are now |cff33ffcc" .. title .. "|r (AFK): %s"
-    _G.CLEARED_AFK          = "You are no longer |cff33ffcc" .. title .. "|r (AFK).\n|cff33ffccShagu|cffffffff wishes you a merry christmas. Thanks for using |cff33ffccpf|cffffffffUI|cffffffff!|r"
+    _G.MARKED_AFK           = "You are now |cff" .. (pfUI.chex or "33ffcc") .. title .. "|r (AFK)."
+    _G.MARKED_AFK_MESSAGE   = "You are now |cff" .. (pfUI.chex or "33ffcc") .. title .. "|r (AFK): %s"
+    _G.CLEARED_AFK          = "You are no longer |cff" .. (pfUI.chex or "33ffcc") .. title .. "|r (AFK).\n|cff" .. (pfUI.chex or "33ffcc") .. "Shagu|cffffffff wishes you a merry christmas. Thanks for using |cff" .. (pfUI.chex or "33ffcc") .. "pf|cffffffffUI|cffffffff!|r"
   end
 
   -- happy new year
@@ -43,7 +43,7 @@ pfUI:RegisterModule("easteregg", "vanilla:tbc", function ()
     fireworks.stext = fireworks:CreateFontString("Status", "LOW", "GameFontWhite")
     fireworks.stext:SetFont(STANDARD_TEXT_FONT, 14, "OUTLINE")
     fireworks.stext:SetPoint("TOP", 0, -380)
-    fireworks.stext:SetText("|cff33ffccShagu|cffffffff wishes you a")
+    fireworks.stext:SetText("|cff" .. (pfUI.chex or "33ffcc") .. "Shagu|cffffffff wishes you a")
 
     fireworks.text = fireworks:CreateFontString("Status", "LOW", "GameFontWhite")
     fireworks.text:SetFont(pfUI.media["font:BigNoodleTitling.ttf"], 38)
@@ -53,7 +53,7 @@ pfUI:RegisterModule("easteregg", "vanilla:tbc", function ()
     fireworks.dtext = fireworks:CreateFontString("Status", "LOW", "GameFontWhite")
     fireworks.dtext:SetFont(STANDARD_TEXT_FONT, 14, "OUTLINE")
     fireworks.dtext:SetPoint("TOP", 0, -430)
-    fireworks.dtext:SetText("Another year with |cff33ffccpf|rUI has passed.\nThanks for continuing to use it!\n\n|cff444444<Click> or '/afk' to exit")
+    fireworks.dtext:SetText("Another year with |cff" .. (pfUI.chex or "33ffcc") .. "pf|rUI has passed.\nThanks for continuing to use it!\n\n|cff444444<Click> or '/afk' to exit")
 
     fireworks:SetScript("OnClick", function()
       this:Hide()

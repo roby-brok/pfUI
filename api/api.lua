@@ -372,12 +372,18 @@ end
 -- Returns an itemLink for the given itemname
 -- 'name'       [string]         name of the item
 -- returns:     [string]         entire itemLink for the given item
+local itemLinkCache = {}
 function pfUI.api.GetItemLinkByName(name)
-  for itemID = 1, 25818 do
+  -- cache successful resolutions so repeated lookups (e.g. per inbox click) are free
+  if itemLinkCache[name] then return itemLinkCache[name] end
+  -- scan through Turtle/OctoWoW's custom item range too (customs go well past 25818)
+  for itemID = 1, 61000 do
     local itemName, hyperLink, itemQuality = GetItemInfo(itemID)
     if (itemName and itemName == name) then
       local _, _, _, hex = GetItemQualityColor(tonumber(itemQuality))
-      return hex.. "|H"..hyperLink.."|h["..itemName.."]|h|r"
+      local link = hex.. "|H"..hyperLink.."|h["..itemName.."]|h|r"
+      itemLinkCache[name] = link
+      return link
     end
   end
 end
@@ -1061,10 +1067,17 @@ end
 function pfUI.api.GetPerfectPixel()
   if pfUI.pixel then return pfUI.pixel end
 
-  if pfUI_config.appearance.border.pixelperfect == "1" then
-    local scale = GetCVar("useUiScale") == "1" and GetCVar("uiScale") or "1"
-    local resolution = GetCVar("gxResolution")
-    local _, _, screenwidth, screenheight = strfind(resolution, "(.+)x(.+)")
+  local resolution = GetCVar("gxResolution") or ""
+  local _, _, screenheight = strfind(resolution, "x(%d+)")
+  screenheight = tonumber(screenheight)
+
+  if pfUI_config.appearance.border.pixelperfect == "1" and screenheight then
+    -- The uiScale cvar is not a reliable source: it is capped at 1.0 while both
+    -- the pixelperfect module and the firstrun slider push UIParent past it via
+    -- SetScale, and it is ignored completely while useUiScale is off. Ask the
+    -- frame itself instead, it always reports what is really on screen.
+    local scale = UIParent:GetEffectiveScale()
+    if not scale or scale <= 0 then scale = 1 end
 
     pfUI.pixel = 768 / screenheight / scale
     pfUI.pixel = pfUI.pixel > 1 and 1 or pfUI.pixel
@@ -1299,7 +1312,10 @@ function pfUI.api.BarButtonAnchor(button,basename,buttonindex,barsize,formfactor
   assert(barsize > 0 and barsize <= NUM_ACTIONBAR_BUTTONS,"BarButtonAnchor: barsize "..tostring(barsize).." is invalid")
   local cols, rows, mode, orientation = ResolveBarLayout(barsize, formfactor, uneven)
   if not cols or not rows then
-    cols, rows, mode, orientation = unpack(pfGridmath[barsize][1]), "rows", "DOWN"
+    -- unpack() must be the last expression or it collapses to a single value
+    -- (which left rows="rows", mode="DOWN", orientation=nil)
+    cols, rows = unpack(pfGridmath[barsize][1])
+    mode, orientation = "rows", "DOWN"
   end
 
   -- fillmode: remap buttonindex to slotindex (grid position in native fill order)

@@ -157,7 +157,7 @@ pfUI:RegisterSkin("Turtle LFT", "vanilla", function ()
   readyBg:SetPoint("TOPLEFT", LFTGroupReadyFrame, "TOPLEFT", 10, -10)
   readyBg:SetPoint("TOPRIGHT", LFTGroupReadyFrame, "TOPRIGHT", -10, -10)
   readyBg:SetHeight(120)
-  LFTGroupReadyFrameBackground = readyBg
+  _G.LFTGroupReadyFrameBackground = readyBg -- skins run setfenv'd; must write the real global for the LFT addon to see it
 
   -- Separator line between background and lower section
   local sep = LFTGroupReadyFrame:CreateTexture(nil, "ARTWORK")

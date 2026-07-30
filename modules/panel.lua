@@ -358,7 +358,7 @@ pfUI:RegisterModule("panel", "vanilla:tbc", function()
             end
             local ccolor = RAID_CLASS_COLORS[L["class"][friend_class]] or { 1, 1, 1 }
             local lcolor = GetDifficultyColor(tonumber(friend_level)) or { 1, 1, 1 }
-            local zcolor = friend_area == playerzone and "|cff33ffcc" or "|cffcccccc"
+            local zcolor = friend_area == playerzone and "|cff" .. (pfUI.chex or "33ffcc") or "|cffcccccc"
             GameTooltip:AddDoubleLine(rgbhex(ccolor) .. friend_name .. rgbhex(lcolor) .. " [" .. friend_level .. "]", zcolor .. friend_area)
           end
         end
@@ -403,11 +403,12 @@ pfUI:RegisterModule("panel", "vanilla:tbc", function()
 
         local all = GetNumGuildMembers()
         local playerzone = GetRealZoneText()
-        local off = FauxScrollFrame_GetOffset(GuildListScrollFrame)
         local left, field, init
 
         for i=1, all do
-          local name, _, _, level, class, zone, _, _, online = GetGuildRosterInfo(off + i)
+          -- iterate the full roster directly; adding the guild-list scroll offset
+          -- made the tooltip skip the first N online members once the UI was scrolled
+          local name, _, _, level, class, zone, _, _, online = GetGuildRosterInfo(i)
           if online then
             if not init then
               GameTooltip_SetDefaultAnchor(GameTooltip, this)
@@ -419,7 +420,7 @@ pfUI:RegisterModule("panel", "vanilla:tbc", function()
             local ccolor = RAID_CLASS_COLORS[L["class"][class]] or { 1, 1, 1 }
             local lcolor = GetDifficultyColor(tonumber(level)) or { 1, 1, 1 }
             local level = "|cff555555" .. "[" .. rgbhex(lcolor) .. level .. "|cff555555]"
-            local raid = raidparty[name] and "|cff555555[|cff33ffccG|cff555555]|r" or ""
+            local raid = raidparty[name] and "|cff555555[|cff" .. (pfUI.chex or "33ffcc") .. "G|cff555555]|r" or ""
 
             if not left then
               left =  level .. raid .. " " .. rgbhex(ccolor) .. name
@@ -568,7 +569,7 @@ pfUI:RegisterModule("panel", "vanilla:tbc", function()
         if not GetInventoryItemQuality("player", 0) then
           pfUI.panel:OutputPanel("ammo", AMMOSLOT .. ": -")
         else
-          pfUI.panel:OutputPanel("ammo", AMMOSLOT .. ": " .. GetInventoryItemCount("player", 0), tooltip)
+          pfUI.panel:OutputPanel("ammo", AMMOSLOT .. ": " .. GetInventoryItemCount("player", 0), widget.Tooltip)
         end
       end)
     end

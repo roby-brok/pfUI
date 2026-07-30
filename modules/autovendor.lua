@@ -61,20 +61,14 @@ pfUI:RegisterModule("autovendor", "vanilla:tbc", function ()
       return
     end
 
-    -- get value
-    local _, icount = GetContainerItemInfo(bag, slot)
-    local _, _, id = string.find(GetContainerItemLink(bag, slot), "item:(%d+):%d+:%d+:%d+")
-    if pfSellData[tonumber(id)] then
-      local _, _, sell, buy = strfind(pfSellData[tonumber(id)], "(.*),(.*)")
-      this.count = this.count + 1
-    end
-
     -- abort if the merchant window disappeared
     if not this.merchant then return end
 
-    -- clear cursor and sell the item
+    -- clear cursor and sell the item; count every grey we actually sell so the
+    -- income summary fires even for items missing from pfSellData
     ClearCursor()
     UseContainerItem(bag, slot)
+    this.count = this.count + 1
   end)
 
   autovendor:SetScript("OnHide", function()

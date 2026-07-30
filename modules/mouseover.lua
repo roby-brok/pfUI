@@ -39,7 +39,7 @@ pfUI:RegisterModule("mouseover", "vanilla", function ()
 
     if not UnitExists(unit) then
       local frame = GetMouseFocus()
-      if frame.label and frame.id then
+      if frame and frame.label and frame.id then
         unit = frame.label .. frame.id
       elseif UnitExists("target") then
         unit = "target"

@@ -9,18 +9,20 @@ pfUI:RegisterModule("cooldown", "vanilla:tbc", function ()
   local parent, parent_name
   local function pfCooldownOnUpdate()
     parent = this:GetParent()
-    if not parent then this:Hide() end
-    parent_name = parent:GetName()
-
-    -- avoid to set cooldowns on invalid frames
-    if parent_name and _G[parent_name .. "Cooldown"] then
-      if not _G[parent_name .. "Cooldown"]:IsShown() then
-        this:Hide()
-      end
-    end
+    if not parent then this:Hide() return end
 
     -- only run every 0.1 seconds from here on
     if ( this.tick or .1) > GetTime() then return else this.tick = GetTime() + .1 end
+
+    -- resolve and cache the matching blizzard cooldown frame once (avoids a
+    -- per-frame string concat + _G lookup), then hide our text on invalid frames
+    if this.pfParentCooldown == nil then
+      parent_name = parent:GetName()
+      this.pfParentCooldown = (parent_name and _G[parent_name .. "Cooldown"]) or false
+    end
+    if this.pfParentCooldown and not this.pfParentCooldown:IsShown() then
+      this:Hide()
+    end
 
     -- fix own alpha value (should be inherited, but somehow isn't always)
     if this:GetAlpha() ~= parent:GetAlpha() then
@@ -94,12 +96,17 @@ pfUI:RegisterModule("cooldown", "vanilla:tbc", function ()
       return
     end
 
-    -- realign cooldown frames
+    -- realign cooldown frames (only when the scale actually changed; this hook
+    -- fires on every cooldown trigger and buttons rarely resize between them)
     local parent = this.GetParent and this:GetParent()
-    if parent and parent:GetWidth() / 36 > 0 then
-      this:SetScale(parent:GetWidth() / 36)
-      this:SetPoint("TOPLEFT", parent, "TOPLEFT", -1, 1)
-      this:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", 1, -1)
+    if parent then
+      local scale = parent:GetWidth() / 36
+      if scale > 0 and this.pfCdScale ~= scale then
+        this.pfCdScale = scale
+        this:SetScale(scale)
+        this:SetPoint("TOPLEFT", parent, "TOPLEFT", -1, 1)
+        this:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", 1, -1)
+      end
     end
 
     -- don't draw global cooldowns

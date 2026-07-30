@@ -573,7 +573,7 @@ pfUI:RegisterModule("bags", "vanilla:tbc", function ()
         frame.bagslots.slots[slot].frame:SetScript("OnEnter", function()
           for slot, f in ipairs(pfUI.bags[this.slot + 1].slots) do
             CreateBackdrop(f.frame, default_border)
-            f.frame.backdrop:SetBackdropBorderColor(.2,1,.8,1)
+            f.frame.backdrop:SetBackdropBorderColor(pfUI.cr,pfUI.cg,pfUI.cb,1)
           end
           SlotEnter(this)
         end)
@@ -1065,21 +1065,6 @@ pfUI:RegisterModule("bags", "vanilla:tbc", function ()
 
         frame.search:SetScript("OnLeave", function()
           frame.search.edit:ClearFocus()
-        end)
-
-        frame.search:SetScript("OnHide", function()
-          frame.search.edit:SetText(T["Search"])
-          for bag = -2, 11 do
-            if pfUI.bags[bag] then
-              local bagsize = GetContainerNumSlots(bag)
-              if bag == -2 and pfUI.bag.showKeyring == true then bagsize = GetKeyRingSize() end
-              for slot = 1, bagsize do
-                if pfUI.bags[bag] and pfUI.bags[bag].slots[slot] then
-                  pfUI.bags[bag].slots[slot].frame:SetAlpha(1)
-                end
-              end
-            end
-          end
         end)
 
         frame.search.edit:SetScript("OnMouseUp", function()

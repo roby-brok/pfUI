@@ -30,7 +30,7 @@ pfUI:RegisterModule("questitem", function ()
     elseif item then
       -- scan for quests
       for id, text in pairs(questlog) do
-        if string.find(string.lower((text or "")), string.lower(item), 1) then
+        if string.find(string.lower((text or "")), string.lower(item), 1, true) then
           quest, level = GetQuestLogTitle(id)
           itemcache[item] = id
           break
@@ -52,7 +52,9 @@ pfUI:RegisterModule("questitem", function ()
 
     -- read item counts
     if C.tooltip.questitem.showcount == "1" and itemcache[item] and itemcache[item] ~= false then
-      local _, _, required = strfind(string.lower(questlog[itemcache[item]]), "_"..string.lower(item).."_(.-)_")
+      -- escape magic chars in the item name so names with -, (, ) etc. don't break/mis-match the pattern
+      local safeitem = string.gsub(string.lower(item), "([%(%)%.%%%+%-%*%?%[%]%^%$])", "%%%1")
+      local _, _, required = strfind(string.lower(questlog[itemcache[item]]), "_"..safeitem.."_(.-)_")
       if required then
         quest = string.format("%s |cffaaaaaa[%s/%s]", quest, (GetItemCount(item) or 0), required)
       end

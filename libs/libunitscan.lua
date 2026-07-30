@@ -118,7 +118,7 @@ libunitscan:SetScript("OnEvent", function()
     end
 
   elseif event == "WHO_LIST_UPDATE" or event == "CHAT_MSG_SYSTEM" then
-    local name, class, level, _
+    local name, class, level, guild, _
     for i = 1, GetNumWhoResults() do
       name, guild, level, _, class, _ = GetWhoInfo(i)
       class = L["class"][class] or nil
@@ -127,7 +127,7 @@ libunitscan:SetScript("OnEvent", function()
 
   elseif event == "UPDATE_MOUSEOVER_UNIT" or event == "PLAYER_TARGET_CHANGED" then
     local scan = event == "PLAYER_TARGET_CHANGED" and "target" or "mouseover"
-    local name, class, level, elite, _
+    local name, class, level, elite, guild, _
     if UnitIsPlayer(scan) then
       _, class = UnitClass(scan)
       level = UnitLevel(scan)

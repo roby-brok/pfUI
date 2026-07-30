@@ -202,7 +202,7 @@ pfUI:RegisterModule("chat", "vanilla:tbc", function ()
   end)
 
   pfUI.chat.urlcopy.text = CreateFrame("EditBox", "pfURLCopyEditBox", pfUI.chat.urlcopy)
-  pfUI.chat.urlcopy.text:SetTextColor(.2,1,.8,1)
+  pfUI.chat.urlcopy.text:SetTextColor(pfUI.cr,pfUI.cg,pfUI.cb,1)
   pfUI.chat.urlcopy.text:SetJustifyH("CENTER")
 
   pfUI.chat.urlcopy.text:SetWidth(250)
@@ -717,13 +717,26 @@ pfUI:RegisterModule("chat", "vanilla:tbc", function ()
   local original = FriendsFrame_OnEvent
 
   local who_query = CreateFrame("Frame")
+
+  local function who_query_restore()
+    _G.FriendsFrame_OnEvent = original
+    who_query.pending = nil
+    -- keep results routed to the who window while it is visible
+    SetWhoToUI(FriendsFrame:IsShown() and WhoFrame:IsShown() and 1 or 0)
+  end
+
   who_query:RegisterEvent("WHO_LIST_UPDATE")
   who_query:SetScript("OnEvent", function()
     if this.pending then
       -- restore everything once a query is received
-      _G.FriendsFrame_OnEvent = original
-      this.pending = nil
-      SetWhoToUI(0)
+      who_query_restore()
+    end
+  end)
+
+  who_query:SetScript("OnUpdate", function()
+    -- the server never answered (query throttled or dropped), restore everything
+    if this.pending and GetTime() > this.pending + 5 then
+      who_query_restore()
     end
   end)
 
@@ -736,7 +749,11 @@ pfUI:RegisterModule("chat", "vanilla:tbc", function ()
   local function ScanWhoName(name)
     -- abort if another query is ongoing
     if who_query.pending then return end
-    who_query.pending = true
+
+    -- never hijack who queries while the social window is open
+    if FriendsFrame:IsShown() then return end
+
+    who_query.pending = GetTime()
 
     -- prepare and send the who query
     _G.FriendsFrame_OnEvent = nothing
@@ -820,23 +837,25 @@ pfUI:RegisterModule("chat", "vanilla:tbc", function ()
       end
     end
 
+    -- detect the whisper prefix BEFORE prepending a timestamp; the timestamp
+    -- would otherwise sit in front of wcol and break the "== 1" prefix match
+    local isWhisper = C.chat.global.whispermod == "1" and string.find(text, wcol, 1) == 1
+
     -- show timestamp in chat
     if C.chat.text.time == "1" then
       text = timecolorhex .. tleft .. date(C.chat.text.timeformat) .. tright .. "|r " .. text
     end
 
     -- save chat history
-    if C.chat.global.whispermod == "1" and string.find(text, wcol, 1) == 1 then
+    if isWhisper then
       SaveChatHistory(frame:GetID(), string.gsub(text, wcol, ""), cr, cg, cb)
     else
       SaveChatHistory(frame:GetID(), text, a1, a2, a3)
     end
 
-    if C.chat.global.whispermod == "1" then
+    if isWhisper then
       -- patch incoming whisper string to match the colors
-      if string.find(text, wcol, 1) == 1 then
-        text = string.gsub(text, "|r", "|r" .. wcol)
-      end
+      text = string.gsub(text, "|r", "|r" .. wcol)
     end
 
     frame:HookAddMessage(text, a1, a2, a3, a4, a5)

@@ -2,9 +2,10 @@ pfUI:RegisterModule("raid", "vanilla:tbc", function ()
   -- do not go further on disabled UFs
   if C.unitframes.disable == "1" then return end
 
-  -- tell RaidFrame.lua pfUI replaces party frames
+  -- tell RaidFrame.lua pfUI replaces party frames. Must go to _G: RaidFrame.lua
+  -- reads the real global and pfUI's module env has no __newindex.
   HookAddonOrVariable("Blizzard_RaidUI", function()
-    GROUP_REPLACE_PARTY = "1"
+    _G.GROUP_REPLACE_PARTY = "1"
   end)
 
   pfUI.uf.raid = CreateFrame("Frame", "pfRaidUpdater", UIParent)

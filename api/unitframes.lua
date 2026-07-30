@@ -356,32 +356,43 @@ function pfUI.api.GetUnitStats(unitstr, trackStats)
 end
 
 local aggrodata = { }
+local aggroScan = nil -- static { u, t, tt } triples, built once so the hot scan allocates nothing
 function pfUI.api.UnitHasAggro(unit)
-  -- Only cache positive results to allow instant detection when aggro changes
-  if aggrodata[unit] and aggrodata[unit].state > 0 and GetTime() < aggrodata[unit].check + 1 then
-    return aggrodata[unit].state
+  local now = GetTime()
+  local data = aggrodata[unit]
+  -- Cache positive results 1s (so aggro clears fast) AND negative results 0.3s
+  -- (so we don't rescan the whole unit table on every call while nothing has aggro).
+  if data and now < data.check + (data.state > 0 and 1 or 0.3) then
+    return data.state
   end
 
-  aggrodata[unit] = aggrodata[unit] or { }
-  aggrodata[unit].check = GetTime()
-  aggrodata[unit].state = 0
+  if not data then data = { }; aggrodata[unit] = data end
+  data.check = now
+  data.state = 0
 
   if UnitExists(unit) and UnitIsFriend(unit, "player") then
-    for u in pairs(pfValidUnits) do
-      local t = u .. "target"
-      local tt = t .. "target"
-
-      if UnitExists(t) and UnitIsUnit(t, unit) and UnitCanAttack(u, unit) then
-        aggrodata[unit].state = aggrodata[unit].state + 1
+    -- pfValidUnits never changes after load, so precompute the "<u>target" /
+    -- "<u>targettarget" token strings once instead of concatenating per call.
+    if not aggroScan then
+      aggroScan = {}
+      for u in pairs(pfValidUnits) do
+        local t = u .. "target"
+        table.insert(aggroScan, { u = u, t = t, tt = t .. "target" })
       end
+    end
 
-      if UnitExists(tt) and UnitIsUnit(tt, unit) and UnitCanAttack(t, unit) then
-        aggrodata[unit].state = aggrodata[unit].state + 1
+    for i = 1, table.getn(aggroScan) do
+      local s = aggroScan[i]
+      if UnitExists(s.t) and UnitIsUnit(s.t, unit) and UnitCanAttack(s.u, unit) then
+        data.state = data.state + 1
+      end
+      if UnitExists(s.tt) and UnitIsUnit(s.tt, unit) and UnitCanAttack(s.t, unit) then
+        data.state = data.state + 1
       end
     end
   end
 
-  return aggrodata[unit].state
+  return data.state
 end
 
 pfUI.uf.glow = CreateFrame("Frame", nil, UIParent)
@@ -764,7 +775,7 @@ function pfUI.uf:UpdateConfig()
   elseif f.config.portrait == "left" then
     f.portrait:SetParent(f)
     f.portrait:ClearAllPoints()
-    f.portrait:SetPoint("LEFT", f, "LEFT", 0, 0)
+    f.portrait:SetPoint("LEFT", f, "LEFT", (tonumber(f.config.portraitoffx) or 0), (tonumber(f.config.portraitoffy) or 0))
 
     f.hp:ClearAllPoints()
     f.hp:SetPoint("TOPRIGHT", f, "TOPRIGHT", 0, 0)
@@ -782,7 +793,7 @@ function pfUI.uf:UpdateConfig()
   elseif f.config.portrait == "right" then
     f.portrait:SetParent(f)
     f.portrait:ClearAllPoints()
-    f.portrait:SetPoint("RIGHT", f, "RIGHT", 0, 0)
+    f.portrait:SetPoint("RIGHT", f, "RIGHT", (tonumber(f.config.portraitoffx) or 0), (tonumber(f.config.portraitoffy) or 0))
 
     f.hp:ClearAllPoints()
     f.hp:SetPoint("TOPLEFT", f, "TOPLEFT", 0, 0)
@@ -1003,8 +1014,8 @@ function pfUI.uf:UpdateConfig()
       end
       local multiply = C.appearance.border.force_blizz == "1" and 1 or 2
       f.buffs[i]:SetPoint(af, anchor, f.config.buffs,
-      invert_v * (i-1-row*perrow)*(multiply*default_border + f.config.buffsize + 1),
-      invert_h * (row*(multiply*default_border + f.config.buffsize + 1) + (multiply*default_border + 1)))
+      invert_v * (i-1-row*perrow)*(multiply*default_border + f.config.buffsize + 1) + (tonumber(f.config.buffoffx) or 0),
+      invert_h * (row*(multiply*default_border + f.config.buffsize + 1) + (multiply*default_border + 1)) + (tonumber(f.config.buffoffy) or 0))
 
       f.buffs[i]:SetWidth(f.config.buffsize)
       f.buffs[i]:SetHeight(f.config.buffsize)
@@ -1275,7 +1286,9 @@ pfUI.uf.stats = {
   fallbackUsed = 0,
   throttledSkips = 0,
   startTime = 0,
-  enabled = true
+  -- off by default: tracking allocates a stats table per HP/power change on every
+  -- frame. Turned on only while the /pfuistats window is open (or via "toggle").
+  enabled = false
 }
 
 -- Stats Frame (Live Display)
@@ -2225,8 +2238,8 @@ function pfUI.uf:RefreshUnit(unit, component)
         end
         local multiply = C.appearance.border.force_blizz == "1" and 1 or 2
         unit.debuffs[i]:SetPoint(af, anchor, unit.config.debuffs,
-        invert_v * (i-1-row*perrow)*(multiply*default_border + unit.config.debuffsize + 1),
-        invert_h * ((row+buffrow)*(multiply*default_border + unit.config.debuffsize + 1) + (multiply*default_border + 1)))
+        invert_v * (i-1-row*perrow)*(multiply*default_border + unit.config.debuffsize + 1) + (tonumber(unit.config.debuffoffx) or 0),
+        invert_h * ((row+buffrow)*(multiply*default_border + unit.config.debuffsize + 1) + (multiply*default_border + 1)) + (tonumber(unit.config.debuffoffy) or 0))
       end
 
       if unit.label == "player" then
@@ -2418,10 +2431,12 @@ function pfUI.uf:RefreshUnit(unit, component)
         end
 
         if texture then
+          -- lower-case once per buff, not once per filter comparison below
+          local ltex = string.lower(texture)
           -- match filter
           for _, filter in pairs(unit.indicators) do
-            if filter == string.lower(texture) then
-              if string.lower(texture) == "interface\\icons\\spell_nature_rejuvenation" then
+            if filter == ltex then
+              if ltex == "interface\\icons\\spell_nature_rejuvenation" then
                 -- Also verify spell name to avoid false matches from spells sharing this icon
                 if not buffName then
                   scanner = scanner or libtipscan:GetScanner("unitframes")
@@ -2433,12 +2448,12 @@ function pfUI.uf:RefreshUnit(unit, component)
                 pfUI.uf:AddIcon(unit, pos, texture, timeleft or prediction, count, tonumber(start), tonumber(duration))
                 pos = pos + 1
                 break
-              elseif string.lower(texture) == "interface\\icons\\spell_holy_renew" then
+              elseif ltex == "interface\\icons\\spell_holy_renew" then
                 local start, duration, prediction = libpredict:GetHotDuration(unitstr, "Renew")
                 pfUI.uf:AddIcon(unit, pos, texture, timeleft or prediction, count, tonumber(start), tonumber(duration))
                 pos = pos + 1
                 break
-              elseif string.lower(texture) == "interface\\icons\\spell_nature_resistnature" then
+              elseif ltex == "interface\\icons\\spell_nature_resistnature" then
                 -- Also verify spell name to avoid false matches from spells sharing this icon
                 if not buffName then
                   scanner = scanner or libtipscan:GetScanner("unitframes")
@@ -2520,8 +2535,9 @@ function pfUI.uf:RefreshUnit(unit, component)
     for pos=pos, 6 do pfUI.uf:HideIcon(unit, pos) end
   end
 
-  -- portrait
-  if unit.portrait and ( component == "all" or component == "portrait" ) then
+  -- portrait ("off" frames keep a hidden portrait frame; skip the per-tick
+  -- SetUnit/GetModel model-diff for them since nothing is displayed anyway)
+  if unit.portrait and unit.config.portrait ~= "off" and ( component == "all" or component == "portrait" ) then
     if C.unitframes.always2dportrait == "1" then
       unit.portrait.tex:Show()
       unit.portrait.model:Hide()
@@ -2830,6 +2846,9 @@ function pfUI.uf:AddIcon(frame, pos, icon, timeleft, stacks, start, duration)
   local position = frame.config.indicator_pos or "TOPLEFT"
   local iconsize = tonumber(frame.config.indicator_size)
   local spacing = tonumber(frame.config.indicator_spacing)
+  -- read this off the real unit frame before we rebind `frame` to hp.bar below
+  -- (hp.bar has no .config, so the read there always fell back to 1)
+  local cooldown_anim = tonumber(frame.config.cooldown_anim)
 
   if not frame.hp then return end
   local frame = frame.hp.bar
@@ -2849,7 +2868,7 @@ function pfUI.uf:AddIcon(frame, pos, icon, timeleft, stacks, start, duration)
     frame.icon[pos].stacks:SetJustifyV("BOTTOM")
 
     -- Check if parent frame has cooldown animation enabled
-    local parent_cooldown_anim = frame.config and tonumber(frame.config.cooldown_anim) or 1
+    local parent_cooldown_anim = cooldown_anim or 1
     if parent_cooldown_anim == 1 then
       frame.icon[pos].cd = CreateFrame(COOLDOWN_FRAME_TYPE, nil, frame.icon[pos])
     else
@@ -3169,6 +3188,10 @@ function pfUI.uf:GetStatusValue(unit, pos)
     config = "unit"
   end
 
+  -- empty text slots return "" anyway; bail before the (expensive) stats pipeline
+  -- so unused positions don't run GetUnitStats every refresh (40 raid frames x 6 slots)
+  if not config or config == "none" then return "" end
+
   -- Get stats with Nampower Integration
   local hp, hpmax, mp, mpmax, powerType = pfUI.api.GetUnitStats(unitstr, true)
   local rhp, rhpmax = hp, hpmax
@@ -3393,23 +3416,27 @@ _G.SlashCmdList["PFUISTATS"] = function(msg)
     
   elseif msg == "show" then
     if pfUI.uf.statsFrame then
+      pfUI.uf.stats.enabled = true
       pfUI.uf.statsFrame:Show()
       DEFAULT_CHAT_FRAME:AddMessage("|cff00ff00pfUI Stats:|r Frame shown")
     end
-    
+
   elseif msg == "hide" then
     if pfUI.uf.statsFrame then
+      pfUI.uf.stats.enabled = false
       pfUI.uf.statsFrame:Hide()
       DEFAULT_CHAT_FRAME:AddMessage("|cff00ff00pfUI Stats:|r Frame hidden")
     end
-    
+
   else
-    -- Toggle frame (default action)
+    -- Toggle frame (default action) - track only while the window is visible
     if pfUI.uf.statsFrame then
       if pfUI.uf.statsFrame:IsShown() then
+        pfUI.uf.stats.enabled = false
         pfUI.uf.statsFrame:Hide()
         DEFAULT_CHAT_FRAME:AddMessage("|cff00ff00pfUI Stats:|r Frame hidden")
       else
+        pfUI.uf.stats.enabled = true
         pfUI.uf.statsFrame:Show()
         DEFAULT_CHAT_FRAME:AddMessage("|cff00ff00pfUI Stats:|r Frame shown")
       end

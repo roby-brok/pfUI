@@ -48,6 +48,12 @@ pfUI.version = {}
 pfUI.hooks = {}
 pfUI.env = {}
 
+-- pfUI signature accent color (mint green). Overridden by the player's class
+-- color when "Use Class Color" is enabled. Computed once after config load.
+-- pfUI.chex is the same color as an "rrggbb" hex string for |cff text codes.
+pfUI.cr, pfUI.cg, pfUI.cb = 0.2, 1, 0.8
+pfUI.chex = "33ffcc"
+
 -- check if macro addons are loaded (disables macrotweak/macroscan)
 function pfUI:MacroAddonsLoaded()
   return IsAddOnLoaded("Supermacro") or IsAddOnLoaded("SuperCleveRoidMacros") or IsAddOnLoaded("UltimaMacros")
@@ -237,8 +243,20 @@ function pfUI:GetEnvironment()
 
   if pfUI_config and pfUI_config.global and pfUI_config.global.language and not translations then
     local lang = pfUI_config and pfUI_config.global and pfUI_config.global.language and pfUI_translation[pfUI_config.global.language] and pfUI_config.global.language or GetLocale()
-    pfUI.env.T = setmetatable(pfUI_translation[lang] or {}, { __index = function(tab,key)
+    -- when the class color accent is active, recolor the pfUI signature color
+    -- in every translated string (chex is final before the first module loads)
+    local accent = pfUI.chex and pfUI.chex ~= "33ffcc" and pfUI.chex
+    local tbl = pfUI_translation[lang] or {}
+    if accent then
+      for key, value in pairs(tbl) do
+        if type(value) == "string" and strfind(value, "33ffcc", 1, true) then
+          rawset(tbl, key, (string.gsub(value, "33ffcc", accent)))
+        end
+      end
+    end
+    pfUI.env.T = setmetatable(tbl, { __index = function(tab,key)
       local value = tostring(key)
+      if accent then value = string.gsub(value, "33ffcc", accent) end
       rawset(tab,key,value)
       return value
     end})
@@ -299,7 +317,7 @@ function pfUI:CheckNewModules()
       -- Only prompt existing users (firstrun wizard already ran)
       if pfUI_init["finalize"] then
         StaticPopupDialogs["PFUI_NEW_MODULE_" .. strupper(name)] = {
-          text = "|cff33ffccpfUI|r: New module available!\n\n|cffffffffDo you want to enable |cff33ffcc" .. (entry.label or name) .. "|r|cffffffff?\n\nYou can always change this later in the pfUI settings.|r",
+          text = "|cff" .. (pfUI.chex or "33ffcc") .. "pfUI|r: New module available!\n\n|cffffffffDo you want to enable |cff" .. (pfUI.chex or "33ffcc") .. (entry.label or name) .. "|r|cffffffff?\n\nYou can always change this later in the pfUI settings.|r",
           button1 = "Yes",
           button2 = "No",
           OnAccept = function()
@@ -390,6 +408,21 @@ pfUI:SetScript("OnEvent", function()
 
     pfUI:LoadConfig()
     pfUI:MigrateConfig()
+
+    -- Resolve the pfUI accent color: class color when enabled, else mint green
+    pfUI.cr, pfUI.cg, pfUI.cb = 0.2, 1, 0.8
+    pfUI.chex = "33ffcc"
+    if pfUI_config.appearance and pfUI_config.appearance.border
+        and pfUI_config.appearance.border.classcolor == "1" then
+      local _, uclass = UnitClass("player")
+      local ucol = uclass and RAID_CLASS_COLORS and RAID_CLASS_COLORS[uclass]
+      if ucol then
+        pfUI.cr, pfUI.cg, pfUI.cb = ucol.r, ucol.g, ucol.b
+        pfUI.chex = ucol.colorStr and string.sub(ucol.colorStr, 3)
+          or string.format("%02x%02x%02x", math.floor(ucol.r*255+0.5), math.floor(ucol.g*255+0.5), math.floor(ucol.b*255+0.5))
+      end
+    end
+
     pfUI:UpdateFonts()
 
     -- load modules

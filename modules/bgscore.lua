@@ -25,7 +25,7 @@ pfUI:RegisterModule("bgscore", "vanilla", function ()
     pfUI_config.positions["WorldStateAlwaysUpFrame"] = { x = x, y = y }
     bgframe:ClearAllPoints()
     bgframe:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", x, y)
-    DEFAULT_CHAT_FRAME:AddMessage("|cff33ffccBG Score Frame|r position saved.")
+    DEFAULT_CHAT_FRAME:AddMessage("|cff" .. (pfUI.chex or "33ffcc") .. "BG Score Frame|r position saved.")
   end)
   mover:Hide()
 
@@ -44,12 +44,17 @@ pfUI:RegisterModule("bgscore", "vanilla", function ()
   bgscore:SetPoint("BOTTOM", mover, "BOTTOM", 0, 2)
 
   mover.label = "BG Score"
+  if not pfUI.unlock then return end -- module depends on the unlock frame registry
   pfUI.unlock.frames = pfUI.unlock.frames or {}
   table.insert(pfUI.unlock.frames, mover)
 
   local pos = pfUI_config and pfUI_config.positions and pfUI_config.positions["WorldStateAlwaysUpFrame"]
   if pos then
+    -- clear the frames' original TOP anchors first, otherwise two conflicting
+    -- anchors stretch/misplace the score frame and the mover
+    bgframe:ClearAllPoints()
     bgframe:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", pos.x, pos.y)
+    mover:ClearAllPoints()
     mover:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", pos.x, pos.y)
   end
 

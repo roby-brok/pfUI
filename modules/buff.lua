@@ -10,7 +10,7 @@ pfUI:RegisterModule("buff", "vanilla:tbc", function ()
   local function RefreshBuffButton(buff)
     if buff.btype == "HELPFUL" then
       if C.buffs.separateweapons == "1" then
-        buff.id = buff.gid - (buff.weapon ~= nill and buff.gid or 0)
+        buff.id = buff.gid - (buff.weapon ~= nil and buff.gid or 0)
       else
         buff.id = buff.gid - pfUI.buff.wepbuffs.count
       end
@@ -254,6 +254,9 @@ pfUI:RegisterModule("buff", "vanilla:tbc", function ()
   pfUI.buff:RegisterEvent("UNIT_INVENTORY_CHANGED")
   pfUI.buff:RegisterEvent("UNIT_MODEL_CHANGED")
   pfUI.buff:SetScript("OnEvent", function()
+    -- these UNIT_ events fire for every nearby unit; the global buff frame only
+    -- tracks the player, so ignore everyone else (avoids 50x refresh in cities)
+    if (event == "UNIT_INVENTORY_CHANGED" or event == "UNIT_MODEL_CHANGED") and arg1 ~= "player" then return end
     if C.buffs.weapons == "1" then
       local mh, mhtime, mhcharge, oh, ohtime, ohcharge = GetWeaponEnchantInfo()
       pfUI.buff.wepbuffs.count = (mh and 1 or 0) + (oh and 1 or 0)

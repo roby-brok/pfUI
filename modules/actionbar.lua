@@ -928,20 +928,22 @@ pfUI:RegisterModule("actionbar", "vanilla", function ()
     if class ~= "DRUID" then return nil end
     
     local foundCat, foundStealth = nil, nil
-    
-    for i = 0, 31 do
-      local texture = GetPlayerBuffTexture(i)
-      if not texture then break end
 
-      if strfind(texture, "Ability_Druid_CatForm") then
-        foundCat = true
+    -- enumerate helpful buffs via GetPlayerBuff (contiguous per filter); indexing
+    -- raw buff handles 0..31 and breaking at the first nil misses buffs sitting
+    -- past an expired-buff hole, so prowl could be detected wrongly
+    local i = 0
+    while true do
+      local buffID = GetPlayerBuff(i, "HELPFUL")
+      if not buffID or buffID < 0 then break end
+      local texture = GetPlayerBuffTexture(buffID)
+      if texture then
+        if strfind(texture, "Ability_Druid_CatForm") then foundCat = true end
+        if strfind(texture, "Ability_Ambush") then foundStealth = true end
       end
-
-      if strfind(texture, "Ability_Ambush") then
-        foundStealth = true
-      end
+      i = i + 1
     end
-    
+
     inCatForm = foundCat
     prowlActive = foundCat and foundStealth
     return prowlActive
@@ -949,12 +951,15 @@ pfUI:RegisterModule("actionbar", "vanilla", function ()
   
   -- Quick scan only for prowl (when we know we're in cat form)
   local function HasProwlBuff()
-    for i = 0, 31 do
-      local texture = GetPlayerBuffTexture(i)
-      if not texture then break end
-      if strfind(texture, "Ability_Ambush") then
+    local i = 0
+    while true do
+      local buffID = GetPlayerBuff(i, "HELPFUL")
+      if not buffID or buffID < 0 then break end
+      local texture = GetPlayerBuffTexture(buffID)
+      if texture and strfind(texture, "Ability_Ambush") then
         return true
       end
+      i = i + 1
     end
     return nil
   end
@@ -1012,15 +1017,18 @@ pfUI:RegisterModule("actionbar", "vanilla", function ()
             -- Prowl ended
             prowlActive = nil
             prowling = nil
-            -- Also check if still in cat form
+            -- Also check if still in cat form (hole-free helpful-buff enumeration)
             inCatForm = nil
-            for i = 0, 31 do
-              local texture = GetPlayerBuffTexture(i)
-              if not texture then break end
-              if strfind(texture, "Ability_Druid_CatForm") then
+            local i = 0
+            while true do
+              local buffID = GetPlayerBuff(i, "HELPFUL")
+              if not buffID or buffID < 0 then break end
+              local texture = GetPlayerBuffTexture(buffID)
+              if texture and strfind(texture, "Ability_Druid_CatForm") then
                 inCatForm = true
                 break
               end
+              i = i + 1
             end
           end
         elseif not inCatForm then
@@ -1287,7 +1295,7 @@ pfUI:RegisterModule("actionbar", "vanilla", function ()
     if f_is_vertical then
       if uneven ~= "Up" and uneven ~= "Down" then uneven = "Down" end
     elseif f_is_horizontal then
-      if uneven ~= "Left" and uneven ~= "Right" then uneven = "Down" end
+      if uneven ~= "Left" and uneven ~= "Right" then uneven = "Left" end
     end
     C.bars["bar"..i].uneven = uneven
     local autohide = C.bars["bar"..i].autohide

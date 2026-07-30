@@ -136,7 +136,7 @@ pfUI:RegisterModule("farmmode", "vanilla:tbc", function ()
     pfUI.farmmap.button.txt = pfUI.farmmap.button:CreateFontString("pfFarmMapText", "LOW", "GameFontWhite")
     pfUI.farmmap.button.txt:SetFont(pfUI.font_default, C.global.font_size, "OUTLINE")
     pfUI.farmmap.button.txt:SetPoint("CENTER", 0, 0)
-    pfUI.farmmap.button.txt:SetText("|cff33ffcc FARM MODE")
+    pfUI.farmmap.button.txt:SetText("|cff" .. (pfUI.chex or "33ffcc") .. " FARM MODE")
   end
 
   CreateBackdrop(pfUI.farmmap)
