@@ -1248,14 +1248,6 @@ pfUI:RegisterModule("gui", "vanilla:tbc", function ()
         "star:*   *",
         "dash:-   -",
       },
-      ["np_targetsymbolsize"] = {
-        "1:100%",
-        "1.5:150%",
-        "2:200%",
-        "2.5:250%",
-        "3:300%",
-        "4:400%",
-      },
       ["gryphons"] = {
         "None:"..T["None"],
         "Gryphon:"..T["Gryphon"],
@@ -2900,7 +2892,6 @@ pfUI:RegisterModule("gui", "vanilla:tbc", function ()
       CreateConfig(U["nameplates"], T["Draw Glow Around Target Nameplate"], C.nameplates, "targetglow", "checkbox")
       CreateConfig(U["nameplates"], T["Glow Color Around Target Nameplate"], C.nameplates, "glowcolor", "color")
       CreateConfig(U["nameplates"], T["Target Nameplate Symbols"], C.nameplates, "targetsymbols", "dropdown", pfUI.gui.dropdowns.np_targetsymbols)
-      CreateConfig(U["nameplates"], T["Target Nameplate Symbol Size"], C.nameplates, "targetsymbolsize", "dropdown", pfUI.gui.dropdowns.np_targetsymbolsize)
       CreateConfig(U["nameplates"], T["Red Name Text On Infight Units"], C.nameplates, "namefightcolor", "checkbox")
       CreateConfig(U["nameplates"], T["Zoom Target Nameplate"], C.nameplates, "targetzoom", "checkbox")
       CreateConfig(U["nameplates"], T["Target Nameplate Zoom Factor"], C.nameplates, "targetzoomval", "dropdown", pfUI.gui.dropdowns.percent_small)

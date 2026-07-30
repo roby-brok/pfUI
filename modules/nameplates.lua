@@ -1033,7 +1033,9 @@ end
 
     nameplate.name:SetFont(font, font_size, font_style)
 
-    local symbolsize = floor(font_size * (tonumber(C.nameplates.targetsymbolsize) or 2))
+    -- Target symbols are fixed at 4x the nameplate font. Not exposed in the GUI: the
+    -- client clamps SetFont at large sizes, so anything past this point stops growing.
+    local symbolsize = floor(font_size * (tonumber(C.nameplates.targetsymbolsize) or 4))
     nameplate.symbolleft:SetFont(font, symbolsize, font_style)
     nameplate.symbolright:SetFont(font, symbolsize, font_style)
 
