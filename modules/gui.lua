@@ -1605,6 +1605,7 @@ pfUI:RegisterModule("gui", "vanilla:tbc", function ()
       CreateConfig(U["mapcolors"], T["Map Group/Raid Circle Size"], C.appearance.worldmap, "groupcircles", "dropdown", pfUI.gui.dropdowns.mapcircle)
       CreateConfig(U["mapcolors"], T["Colorize player name on WorldMap and BattlefieldMinimap"], C.appearance.worldmap, "colornames", "checkbox")
       CreateConfig(U["map"], T["Map Tooltip Scale"], C.appearance.worldmap, "tooltipsize", "dropdown", pfUI.gui.dropdowns.maptooltip)
+      CreateConfig(U["map"], T["Zoom and Drag the World Map with the Mouse"], C.appearance.worldmap, "mousezoom", "checkbox")
       CreateConfig(nil) -- spacer
       CreateConfig(nil, T["Enable Frame Shadow"], C.appearance.border, "shadow", "checkbox")
       CreateConfig(nil, T["Frame Shadow Intensity"], C.appearance.border, "shadow_intensity", "dropdown", pfUI.gui.dropdowns.uf_debuff_indicator_size)
