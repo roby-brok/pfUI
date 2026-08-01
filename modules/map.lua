@@ -37,6 +37,18 @@ pfUI:RegisterModule("map", "vanilla:tbc", function ()
   local alpha = C.position["WorldMapFrame"].alpha
   local scale = C.position["WorldMapFrame"].scale
 
+  -- window dragging, assigned with SetScript instead of a hook: the client's
+  -- map maximize handling replaces these scripts again after startup, so a
+  -- hook installed once silently dies. re-assigned on every show instead.
+  local function MapWindowDragStart()
+    WorldMapFrame:StartMoving()
+  end
+
+  local function MapWindowDragStop()
+    WorldMapFrame:StopMovingOrSizing()
+    SaveMovable(WorldMapFrame, true)
+  end
+
   local pfMapLoader = CreateFrame("Frame")
   pfMapLoader:RegisterEvent("PLAYER_ENTERING_WORLD")
   pfMapLoader:SetScript("OnEvent", function()
@@ -66,6 +78,12 @@ pfUI:RegisterModule("map", "vanilla:tbc", function ()
 
         -- always switch to current zone when opening the map
         pfOrigSetMapToCurrentZone()
+
+        -- claim the window drag back from the client (see MapWindowDragStart)
+        WorldMapFrame:SetMovable(true)
+        WorldMapFrame:RegisterForDrag("LeftButton")
+        WorldMapFrame:SetScript("OnDragStart", MapWindowDragStart)
+        WorldMapFrame:SetScript("OnDragStop", MapWindowDragStop)
       end)
 
       HookScript(WorldMapFrame, "OnMouseWheel", function()
@@ -95,14 +113,6 @@ pfUI:RegisterModule("map", "vanilla:tbc", function ()
         SaveMovable(this, true)
       end)
 
-      HookScript(WorldMapFrame, "OnDragStart", function()
-        WorldMapFrame:StartMoving()
-      end)
-
-      HookScript(WorldMapFrame, "OnDragStop",function()
-        WorldMapFrame:StopMovingOrSizing()
-        SaveMovable(this, true)
-      end)
     end
 
     WorldMapFrame:SetAlpha(alpha)
