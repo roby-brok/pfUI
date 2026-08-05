@@ -85,15 +85,27 @@ pfUI:RegisterModule("mapcolors", function ()
     end
   end
 
+  -- returns the tooltip text for this map button, or nil when we can't resolve
+  -- one. The name is re-read on every hover: caching it on the button pins the
+  -- first player who ever used that party/raid slot, so a later group shows the
+  -- previous members' names. UnitName also gives the raw, uncolored string, so
+  -- there's no |c...|r layer to nest.
   local function ColorizeName(frame)
     local _, class = UnitClass(frame.unit)
     local color = RAID_CLASS_COLORS[class]
-    if not color then return end
-    -- keep the uncolored name so we don't nest another |c...|r layer every hover
-    frame.rawname = frame.rawname or UnitName(frame.unit)
-    if frame.rawname then
-      frame.name = '|c'..color.colorStr..frame.rawname..'|r'
-    end
+    local rawname = UnitName(frame.unit)
+    -- battleground team members have no unit token; the client already put
+    -- their plain name on the button, so hand that back untouched
+    if not color or not rawname then return frame.name end
+    frame.name = '|c'..color.colorStr..rawname..'|r'
+    return frame.name
+  end
+
+  local function AppendName(tooltipText, frame)
+    local name = ColorizeName(frame)
+    if not name then return tooltipText end
+    if tooltipText == "" then return name end
+    return tooltipText.."\n"..name
   end
 
   local function UpdateUnitColors(unit_button_name, tooltip)
@@ -101,8 +113,7 @@ pfUI:RegisterModule("mapcolors", function ()
     if unit_button_name == 'WorldMap' then
       -- check player
       if MouseIsOver(WorldMapPlayer) then
-        ColorizeName(WorldMapPlayer)
-        tooltipText = WorldMapPlayer.name
+        tooltipText = AppendName(tooltipText, WorldMapPlayer)
       end
     end
 
@@ -110,8 +121,7 @@ pfUI:RegisterModule("mapcolors", function ()
     for i=1, MAX_PARTY_MEMBERS do
       local frame = _G[unit_button_name.."Party"..i]
       if frame:IsVisible() and MouseIsOver(frame) then
-        ColorizeName(frame)
-        tooltipText = tooltipText.."\n"..frame.name
+        tooltipText = AppendName(tooltipText, frame)
       end
     end
 
@@ -119,8 +129,7 @@ pfUI:RegisterModule("mapcolors", function ()
     for i=1, MAX_RAID_MEMBERS do
       local frame = _G[unit_button_name.."Raid"..i]
       if frame:IsVisible() and MouseIsOver(frame) then
-        ColorizeName(frame)
-        tooltipText = tooltipText.."\n"..frame.name
+        tooltipText = AppendName(tooltipText, frame)
       end
     end
 
