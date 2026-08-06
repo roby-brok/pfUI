@@ -34,10 +34,25 @@ pfUI:RegisterModule("minimap", "vanilla:tbc", function ()
     size = tonumber(C.appearance.minimap.size) or 140
 
     pfUI.minimap:SetWidth(size)
-    pfUI.minimap:SetHeight(size)
+
+    -- farmmode shrinks the minimap to a 16px bar and restores the height it
+    -- saved on entry. Hand it the new size instead of fighting its bar back to
+    -- full height and then having it restore the pre-resize value on exit.
+    if pfUI.farmmap and pfUI.farmmap:IsShown() then
+      pfUI.farmmap.mmoldsize = size
+    else
+      pfUI.minimap:SetHeight(size)
+    end
 
     Minimap:SetWidth(size)
     Minimap:SetHeight(size)
+
+    -- Both are single-anchored with an explicit width, so unlike the panel and
+    -- addonbutton frames (which are anchored to two corners, or rescan on a
+    -- timer) they never follow a resize on their own. Guarded because this runs
+    -- once before either frame is created further down.
+    if pfUI.minimapCoordinates then pfUI.minimapCoordinates:SetWidth(size) end
+    if pfUI.minimapZone then pfUI.minimapZone:SetWidth(size) end
 
     -- vanilla+tbc: do the best to detect the minimap arrow
     local arrowscale = tonumber(C.appearance.minimap.arrowscale)
