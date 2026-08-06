@@ -860,7 +860,6 @@ pfUI_translation["zhTW"] = {
   ["Vertical Actionbar"] = nil,
   ["Vertical Healthbar"] = nil,
   ["Vertical Offset"] = nil,
-  ["Vertical Offset (|cffffaaaaExperimental|r)"] = nil,
   ["Vertical Text Offset"] = nil,
   ["Very Fast"] = "非常快",
   ["Very Slow"] = "非常慢",

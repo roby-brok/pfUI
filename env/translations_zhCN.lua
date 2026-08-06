@@ -861,7 +861,6 @@ pfUI_translation["zhCN"] = {
   ["Vertical Actionbar"] = "右侧竖直动作条",
   ["Vertical Healthbar"] = "竖直血条",
   ["Vertical Offset"] = "垂直偏移",
-  ["Vertical Offset (|cffffaaaaExperimental|r)"] = "垂直偏移（|cffffaaaa测试功能|r）",
   ["Vertical Text Offset"] = "垂直文字偏移",
   ["Very Fast"] = "非常快",
   ["Very Slow"] = "非常慢",

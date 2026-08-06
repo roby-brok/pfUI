@@ -860,7 +860,6 @@ pfUI_translation["frFR"] = {
   ["Vertical Actionbar"] = "Barre d'action Verticale",
   ["Vertical Healthbar"] = nil,
   ["Vertical Offset"] = nil,
-  ["Vertical Offset (|cffffaaaaExperimental|r)"] = nil,
   ["Vertical Text Offset"] = nil,
   ["Very Fast"] = "Très Rapide",
   ["Very Slow"] = "Très Doucement",

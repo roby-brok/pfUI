@@ -860,7 +860,6 @@ pfUI_translation["koKR"] = {
   ["Vertical Actionbar"] = nil,
   ["Vertical Healthbar"] = nil,
   ["Vertical Offset"] = nil,
-  ["Vertical Offset (|cffffaaaaExperimental|r)"] = nil,
   ["Vertical Text Offset"] = nil,
   ["Very Fast"] = "매우 빠르게",
   ["Very Slow"] = "매우 느리게",
