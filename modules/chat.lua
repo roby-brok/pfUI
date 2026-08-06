@@ -798,7 +798,11 @@ pfUI:RegisterModule("chat", "vanilla:tbc", function ()
             match = true
           end
         elseif C.chat.text.whosearchunknown == "1" then
-          ScanWhoName(name)
+          -- query the bare name, not the raw link capture. `name` can carry
+          -- trailing :fields, which is why `real` is split out above and used
+          -- for every other lookup here; sending the unsplit string made the
+          -- server /who search for a player who cannot exist.
+          ScanWhoName(real)
         end
 
         if C.chat.text.tintunknown == "1" or match then

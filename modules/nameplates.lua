@@ -1596,7 +1596,7 @@ end
     -- VANILLA OVERLAP/CLICKTHROUGH HANDLING
     -- =========================================================================
     if pfUI.client <= 11200 then
-      local useOverlap = C.nameplates["overlap"] == "1" or C.nameplates["vertical_offset"] ~= "0"
+      local useOverlap = C.nameplates["overlap"] == "1" or (tonumber(C.nameplates["vertical_offset"]) or 0) ~= 0
       local clickable = C.nameplates["clickthrough"] ~= "1"
 
       if not clickable then
@@ -2059,19 +2059,19 @@ end
 
       local parent = self
       local nameplate = self.nameplate
-      local plate = (C.nameplates["overlap"] == "1" or C.nameplates["vertical_offset"] ~= "0") and nameplate or parent
+      local plate = (C.nameplates["overlap"] == "1" or (tonumber(C.nameplates["vertical_offset"]) or 0) ~= 0) and nameplate or parent
 
       -- disable all clicks for now
       parent:EnableMouse(false)
       nameplate:EnableMouse(false)
 
       -- adjust vertical offset
-      if C.nameplates["vertical_offset"] ~= "0" then
+      if (tonumber(C.nameplates["vertical_offset"]) or 0) ~= 0 then
         nameplate:SetPoint("TOP", parent, "TOP", 0, tonumber(C.nameplates["vertical_offset"]))
       end
 
       -- replace clickhandler
-      if C.nameplates["overlap"] == "1" or C.nameplates["vertical_offset"] ~= "0" then
+      if C.nameplates["overlap"] == "1" or (tonumber(C.nameplates["vertical_offset"]) or 0) ~= 0 then
         plate:SetScript("OnClick", function() parent:Click() end)
       end
 
@@ -2088,7 +2088,7 @@ end
       hookOnDataChanged(self, nameplate)
 
       -- make sure to keep mouse events disabled on parent nameplate
-      if (C.nameplates["overlap"] == "1" or C.nameplates["vertical_offset"] ~= "0") then
+      if (C.nameplates["overlap"] == "1" or (tonumber(C.nameplates["vertical_offset"]) or 0) ~= 0) then
         nameplate.parent:EnableMouse(false)
       end
     end
