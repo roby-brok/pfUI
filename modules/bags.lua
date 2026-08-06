@@ -665,6 +665,18 @@ pfUI:RegisterModule("bags", "vanilla:tbc", function ()
     end
   end
 
+  -- show or hide the gold strings on the bag and bank frames. Defined above
+  -- CreateAdditions so it exists by the time the frames are built, and used as
+  -- the gui update function so the option applies without a reload.
+  function pfUI.bag:UpdateGoldVisibility()
+    local hide = C.appearance.bags.hidegold == "1"
+    for _, frame in pairs({ pfUI.bag.left, pfUI.bag.right }) do
+      if frame.gold then
+        if hide then frame.gold:Hide() else frame.gold:Show() end
+      end
+    end
+  end
+
   function pfUI.bag:UpdateCooldowns()
     local frame
     for bag=-2, 11 do
@@ -987,6 +999,8 @@ pfUI:RegisterModule("bags", "vanilla:tbc", function ()
         frame.gold.text:SetJustifyH("RIGHT")
         frame.gold.text:SetAllPoints()
       end
+
+      pfUI.bag:UpdateGoldVisibility()
 
       -- bag search
       if not frame.search then
