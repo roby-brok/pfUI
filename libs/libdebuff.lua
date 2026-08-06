@@ -441,7 +441,11 @@ local function GetDebuffSlotMap(guid)
 
   local now = GetTime()
   local entry = slotMapCache[guid]
-  if entry and entry.t > now then
+  -- entry.t is only assigned once the rebuild below completes. If anything in
+  -- that loop throws (GetSpellRecField/GetSpellIcon on a bad aura), the entry
+  -- stays cached with t == nil -- so test it, or every later call for this guid
+  -- errors on "compare nil with number" and the guid never recovers.
+  if entry and entry.t and entry.t > now then
     return entry.map
   end
 
