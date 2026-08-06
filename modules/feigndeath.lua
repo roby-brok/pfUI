@@ -19,7 +19,11 @@ pfUI:RegisterModule("feigndeath", "vanilla:tbc", function ()
   end)
 
   local oldUnitHealth = UnitHealth
-  function UnitHealth(arg)
+  -- must be the real global: modules run setfenv'd to pfUI.env, which has no
+  -- __newindex, so a bare assignment only overrides UnitHealth for other
+  -- modules. api/unitframes.lua and libs/libhealth.lua -- the code that actually
+  -- feeds the unit frames -- are not setfenv'd and read _G.UnitHealth.
+  _G.UnitHealth = function(arg)
     if UnitIsDead(arg) and cache[UnitName(arg)] then
       return cache[UnitName(arg)]
     else
