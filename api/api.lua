@@ -1049,6 +1049,11 @@ function pfUI.api.rgbhex(r, g, b, a)
   return ""
 end
 
+-- Smallest border the blizzard border art can be drawn at. Shared by
+-- GetBorderSize (which reserves the space) and CreateBackdrop (which paints
+-- it) so the two can never disagree on how thick a forced border is.
+local BLIZZ_BORDER_MIN = 3
+
 -- [ GetBorderSize ]
 -- Returns the configure value of a border and its pixel scaled version.
 -- 'pref' allows to specifiy a custom border (i.e unitframes, panel)
@@ -1060,19 +1065,30 @@ function pfUI.api.GetBorderSize(pref)
     pref = "default"
   end
 
+  local raw, scaled
   if pfUI.borders[pref] then
     -- return already cached values
-    return pfUI.borders[pref][1], pfUI.borders[pref][2]
+    raw, scaled = pfUI.borders[pref][1], pfUI.borders[pref][2]
   else
     -- add new borders to the pfUI tree
-    local raw = tonumber(pfUI_config.appearance.border[pref])
+    raw = tonumber(pfUI_config.appearance.border[pref])
     if raw == -1 then raw = 3 end
 
-    local scaled = raw * GetPerfectPixel()
+    scaled = raw * GetPerfectPixel()
     pfUI.borders[pref] = { raw, scaled }
-
-    return raw, scaled
   end
+
+  -- The blizzard border art carries a fixed 3 unit inset (see the insets on
+  -- pfUI.backdrop_blizz_* in pfUI.lua), so force_blizz cannot draw thinner than
+  -- that. Apply the minimum here rather than only where the backdrop is painted:
+  -- every caller uses this to reserve space, and when the painter clamps but
+  -- they don't, each border overhangs the gap left for it by the difference.
+  -- Kept outside the cache so toggling the option can't hand back a stale size.
+  if pfUI_config.appearance.border.force_blizz == "1" and scaled < BLIZZ_BORDER_MIN then
+    return BLIZZ_BORDER_MIN / GetPerfectPixel(), BLIZZ_BORDER_MIN
+  end
+
+  return raw, scaled
 end
 
 -- [ GetPerfectPixel ]
@@ -1143,7 +1159,10 @@ function pfUI.api.CreateBackdrop(f, inset, legacy, transp, backdropSetting)
   -- detect if blizzard backdrops shall be used
   local blizz = C.appearance.border.force_blizz == "1" and true or nil
   backdrop = blizz and pfUI.backdrop_blizz_full or rawborder == 1 and pfUI.backdrop_thin or pfUI.backdrop
-  border = blizz and math.max(border, 3) or border
+  -- GetBorderSize already applies this minimum, so it is a no-op for the value
+  -- read above. It still matters for callers that pass an explicit inset, which
+  -- overrides that value and would otherwise squeeze the border art.
+  border = blizz and math.max(border, BLIZZ_BORDER_MIN) or border
 
   -- get the color settings
   br, bg, bb, ba = pfUI.api.GetStringColor(pfUI_config.appearance.border.background)
@@ -1186,9 +1205,13 @@ function pfUI.api.CreateBackdrop(f, inset, legacy, transp, backdropSetting)
 
     if blizz then
       if not f.backdrop_border then
-        local border = CreateFrame("Frame", nil, f.backdrop)
-        border:SetFrameLevel(level + 2)
-        f.backdrop_border = border
+        -- read the level off `f` directly. `level` is a file-scope upvalue that
+        -- is only assigned in the `not f.backdrop` branch above, so whenever a
+        -- frame gets its border after its backdrop (enabling force_blizz on
+        -- frames that already exist) it still held some unrelated frame's level.
+        local bframe = CreateFrame("Frame", nil, f.backdrop)
+        bframe:SetFrameLevel(f:GetFrameLevel() + 2)
+        f.backdrop_border = bframe
 
         local hookSetBackdropBorderColor = f.backdrop.SetBackdropBorderColor
         f.backdrop.SetBackdropBorderColor = function(self, r, g, b, a)
