@@ -373,9 +373,22 @@ end
 -- 'name'       [string]         name of the item
 -- returns:     [string]         entire itemLink for the given item
 local itemLinkCache = {}
+local itemLinkMisses = {}
+local ITEMLINK_MAX_SCANS = 2
 function pfUI.api.GetItemLinkByName(name)
+  -- GetInboxItem() hands us a nil name for attachment-less mail
+  if not name then return end
   -- cache successful resolutions so repeated lookups (e.g. per inbox click) are free
   if itemLinkCache[name] then return itemLinkCache[name] end
+
+  -- Failures have to be counted, not just retried. GetItemInfo(id) returns nil
+  -- for every item missing from the local item cache, so an unresolvable name
+  -- walks all 61000 ids and finds nothing -- a visible hitch on every tooltip
+  -- hover. Allow a couple of attempts (rendering the tooltip caches the item,
+  -- so the next hover usually resolves), then stop scanning for that name.
+  local misses = itemLinkMisses[name] or 0
+  if misses >= ITEMLINK_MAX_SCANS then return end
+
   -- scan through Turtle/OctoWoW's custom item range too (customs go well past 25818)
   for itemID = 1, 61000 do
     local itemName, hyperLink, itemQuality = GetItemInfo(itemID)
@@ -386,6 +399,8 @@ function pfUI.api.GetItemLinkByName(name)
       return link
     end
   end
+
+  itemLinkMisses[name] = misses + 1
 end
 
 -- [ GetItemCount ]
