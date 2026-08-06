@@ -1223,6 +1223,14 @@ function pfUI.api.CreateBackdrop(f, inset, legacy, transp, backdropSetting)
       f.backdrop_border:SetAllPoints(f.backdrop)
       f.backdrop_border:SetBackdrop(pfUI.backdrop_blizz_border)
       f.backdrop_border:SetBackdropBorderColor(er, eg, eb , ea)
+      f.backdrop_border:Show()
+    elseif f.backdrop_border then
+      -- force_blizz was switched off since this frame last got a backdrop. The
+      -- border frame is kept rather than dropped (the SetBackdropBorderColor
+      -- hook above still points at it, and re-enabling reuses it), but it has
+      -- to stop drawing -- nothing else here touches it, so without this it
+      -- kept painting the blizzard edge over the plain one.
+      f.backdrop_border:Hide()
     end
   end
 end
