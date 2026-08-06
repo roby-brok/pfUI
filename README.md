@@ -15,7 +15,7 @@
 > (`github.com/me0wg4ming/pfUI`) is no longer reachable, which is part of why this copy exists.
 > The full original commit history is preserved here.
 >
-> Fork maintained by **Roby_Brok**. Version bumped to **9.0.3** to distinguish it.
+> Fork maintained by **Roby_Brok**. Version bumped to **9.0.4** to distinguish it.
 >
 > ---
 >
@@ -61,7 +61,7 @@
 >
 > ---
 
-[![Version](https://img.shields.io/badge/version-9.0.3-blue.svg)](https://github.com/roby-brok/pfUI)
+[![Version](https://img.shields.io/badge/version-9.0.4-blue.svg)](https://github.com/roby-brok/pfUI)
 [![OctoWoW](https://img.shields.io/badge/OctoWoW-supported-brightgreen.svg)](https://octowow.st)
 [![SuperWoW](https://img.shields.io/badge/SuperWoW-Optional-yellow.svg)](https://github.com/balakethelock/SuperWoW)
 [![Nampower](https://img.shields.io/badge/Nampower-Required-purple.svg)](https://gitea.com/avitasia/nampower)

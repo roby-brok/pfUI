@@ -54,20 +54,30 @@ pfUI:RegisterModule("minimap", "vanilla:tbc", function ()
     if pfUI.minimapCoordinates then pfUI.minimapCoordinates:SetWidth(size) end
     if pfUI.minimapZone then pfUI.minimapZone:SetWidth(size) end
 
-    -- vanilla+tbc: do the best to detect the minimap arrow
+    -- vanilla+tbc: identify the minimap arrow by its model path, and only that.
+    -- There used to be a fallback to child #9, which is not the arrow on every
+    -- client -- so whenever detection failed it silently rescaled whichever
+    -- unrelated child happened to sit at that index. Scaling nothing is the
+    -- correct failure mode for a cosmetic option.
     local arrowscale = tonumber(C.appearance.minimap.arrowscale)
-    local minimaparrow = ({Minimap:GetChildren()})[9]
-    for k, v in pairs({Minimap:GetChildren()}) do
-      if v:IsObjectType("Model") and not v:GetName() then
-        if string.find(strlower(v:GetModel()), "interface\\minimap\\minimaparrow") then
-          minimaparrow = v
-          break
+    if arrowscale and arrowscale > 0 then
+      -- cached: the arrow child does not change for the life of the session
+      if not pfUI.minimap.arrow then
+        for _, v in pairs({Minimap:GetChildren()}) do
+          if v:IsObjectType("Model") and not v:GetName() then
+            -- GetModel() is nil on a Model that has none set; strlower(nil) errors
+            local model = v:GetModel()
+            if model and string.find(strlower(model), "interface\\minimap\\minimaparrow") then
+              pfUI.minimap.arrow = v
+              break
+            end
+          end
         end
       end
-    end
 
-    if minimaparrow then
-      minimaparrow:SetScale(arrowscale)
+      if pfUI.minimap.arrow then
+        pfUI.minimap.arrow:SetScale(arrowscale)
+      end
     end
   end
 
