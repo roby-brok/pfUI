@@ -746,6 +746,15 @@ pfUI:RegisterModule("chat", "vanilla:tbc", function ()
     return pfUI_playerDB[name].level
   end
 
+  -- Last time we asked the server about a given name. A hit is written to
+  -- pfUI_playerDB by libunitscan and GetUnitData then short-circuits forever,
+  -- so this only really holds names the server could not resolve -- offline,
+  -- opposite faction, renamed. Without it every one of those was re-queried
+  -- each time it appeared in chat, for the whole session, every session.
+  local whoAsked = {}
+  local WHO_RETRY = 600 -- seconds before asking about the same name again
+  local WHO_INTERVAL = 5 -- minimum gap between queries; /who is rate limited
+
   local function ScanWhoName(name)
     -- abort if another query is ongoing
     if who_query.pending then return end
@@ -753,7 +762,19 @@ pfUI:RegisterModule("chat", "vanilla:tbc", function ()
     -- never hijack who queries while the social window is open
     if FriendsFrame:IsShown() then return end
 
-    who_query.pending = GetTime()
+    local now = GetTime()
+
+    -- trickle instead of flooding: `pending` alone only serialises the queries,
+    -- it does not space them, so a busy channel fired a fresh one the instant
+    -- the previous answer landed.
+    if who_query.last and now < who_query.last + WHO_INTERVAL then return end
+
+    -- and never twice for the same name inside the retry window
+    if whoAsked[name] and now < whoAsked[name] + WHO_RETRY then return end
+
+    whoAsked[name] = now
+    who_query.pending = now
+    who_query.last = now
 
     -- prepare and send the who query
     _G.FriendsFrame_OnEvent = nothing
