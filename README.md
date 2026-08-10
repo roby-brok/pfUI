@@ -21,12 +21,16 @@
 >
 > #### UI scale / resolution
 >
-> - **`GetPerfectPixel` measured against the wrong scale.** It read the `uiScale` cvar, which is
->   capped at 1.0 — while the "Huge"/"Large" presets (1.42 / 1.14) and the first-run slider
->   (0.5–2.0) push `UIParent` past that with `SetScale`, and the cvar is ignored entirely when
->   `useUiScale` is off. It now asks `UIParent:GetEffectiveScale()`, which always reports what is
->   really on screen. An unparseable `gxResolution` is also guarded (previously `768 / nil`, which
->   killed every border on the UI).
+> - **`GetPerfectPixel` guards an unparseable `gxResolution`** (previously `768 / nil`, which killed
+>   every border on the UI).
+>
+>   ~~It also measured against `UIParent:GetEffectiveScale()` rather than the `uiScale` cvar.~~
+>   **Reverted 2026-08-10 — that was wrong.** The cvar's 1.0 cap looks like a bug but is
+>   load-bearing: the "Huge"/"Large" presets push `UIParent` to 1.42 / 1.14 via `SetScale`, and
+>   measuring that true scale makes `768 / screenheight / scale` fall below half a pixel, so border
+>   `edgeSize` rounds to zero and the borders vanish. Caught by
+>   [brues-code](https://github.com/brues-code) after the same change was merged and then reverted
+>   upstream.
 > - **`pixelperfect` loaded 55th, but sets the scale everything else is measured against.** That
 >   value is cached on first use, so every module loaded before it baked in the *previous* scale —
 >   the classic "reload twice before it looks right". It now loads first.

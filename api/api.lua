@@ -1103,12 +1103,13 @@ function pfUI.api.GetPerfectPixel()
   screenheight = tonumber(screenheight)
 
   if pfUI_config.appearance.border.pixelperfect == "1" and screenheight then
-    -- The uiScale cvar is not a reliable source: it is capped at 1.0 while both
-    -- the pixelperfect module and the firstrun slider push UIParent past it via
-    -- SetScale, and it is ignored completely while useUiScale is off. Ask the
-    -- frame itself instead, it always reports what is really on screen.
-    local scale = UIParent:GetEffectiveScale()
-    if not scale or scale <= 0 then scale = 1 end
+    -- Deliberately the uiScale cvar, not UIParent:GetEffectiveScale(). The
+    -- cvar's 1.0 cap is load-bearing: the pixelperfect presets push UIParent
+    -- past it via SetScale, and measuring that true scale makes
+    -- 768/screenheight/scale fall below half a pixel, so border edgeSize
+    -- rounds to zero and the borders disappear entirely.
+    local scale = tonumber(GetCVar("uiScale")) or 1
+    if scale <= 0 then scale = 1 end
 
     pfUI.pixel = 768 / screenheight / scale
     pfUI.pixel = pfUI.pixel > 1 and 1 or pfUI.pixel
