@@ -1186,30 +1186,27 @@ Master uses **none** of these - it relies on:
 
 ---
 
-## 📋 Installation
+## 📋 Requirements
 
-### Requirements
+**See [Installation](#installation) below for how to install** — this section is only about
+the DLLs.
 
-**REQUIRED:**
-- SuperWoW DLL
-- Nampower DLL
+| DLL | | |
+|---|---|---|
+| [Nampower](https://gitea.com/avitasia/nampower) | **required** | queued casting, and the spell data several modules read |
+| [SuperWoW](https://github.com/balakethelock/SuperWoW) | optional | `UNIT_CASTEVENT` castbars, GUID unit tokens, `UnitPosition` distances |
+| [UnitXP_SP3](https://codeberg.org/konaka/UnitXP_SP3) | optional | true 3D distance, accurate XP tracking |
 
-**Optional but Recommended:**
-- UnitXP_SP3 DLL (for accurate XP tracking)
-
-### Steps
-
-1. Install SuperWoW + Nampower
-2. Download pfUI Experiment build
-3. Extract to `Interface/AddOns/pfUI`
-4. `/reload`
-5. Check for errors in console
+Only Nampower is required; the modules that need the other two check for them and stay out
+of the way when they are missing.
 
 ### Verification
 
-Type `/run print(GetNampowerVersion())` - should show version number.
+Type `/run print(GetNampowerVersion())` — it should print a version number. If it prints
+`nil`, Nampower is not loaded, and no amount of addon configuration will fix that.
 
-If `nil`, Nampower is not installed correctly!
+> Older revisions of this section listed SuperWoW as required and told you to "download the
+> pfUI Experiment build", which was never a thing you could download. Both were wrong.
 
 ---
 
@@ -1627,11 +1624,46 @@ Turtle WoW includes TBC spells in the Vanilla client. This version includes all 
 ---
 
 ## Installation
-1. Download **[Latest Version](https://github.com/me0wg4ming/pfUI/archive/master.zip)**
-2. Unpack the Zip file
-3. Rename the folder "pfUI-master" to "pfUI"
-4. Copy "pfUI" into Wow-Directory\Interface\AddOns
-5. Restart Wow
+
+> ### ⚠️ The folder **must** be named `pfUI`
+>
+> Not `pfUI-master`. This is the easiest way to install it wrong, and it fails without
+> telling you why:
+>
+> **WoW skips the addon entirely.** It only loads a folder whose name matches the `.toc`
+> inside it. A folder called `pfUI-master` containing `pfUI.toc` simply never runs — no
+> error, no entry in the addon list, nothing to notice.
+>
+> Renaming the `.toc` to match instead *appears* to work here, because pfUI probes
+> `{ "", "-master", "-tbc", "-wotlk" }` when it looks for its own media directory and
+> `-master` happens to be on that list. Don't — you would be relying on a coincidence, and
+> every other name on that list fails. Rename the folder.
+>
+> This also means launchers with an "add custom git addon" feature **cannot install this
+> correctly** — they name the folder after the repository. Install it by hand.
+
+**Download**
+
+1. Grab the [latest code](https://github.com/roby-brok/pfUI/archive/refs/heads/master.zip)
+2. Unpack the zip — you get a folder called `pfUI-master`
+3. **Rename it to `pfUI`**
+4. Move it into `Wow-Directory\Interface\AddOns`
+5. Restart WoW
+
+**Or with git**, which makes updates a `git pull`:
+
+```sh
+cd Wow-Directory/Interface/AddOns
+git clone https://github.com/roby-brok/pfUI.git pfUI
+```
+
+That trailing `pfUI` is what names the folder correctly.
+
+**[Nampower](https://gitea.com/avitasia/nampower) is required.**
+[SuperWoW](https://github.com/balakethelock/SuperWoW) and
+[UnitXP_SP3](https://codeberg.org/konaka/UnitXP_SP3) are optional — features that need them
+are skipped when they are absent. This build does **not** use ClassicAPI; for the ClassicAPI
+one see [pfUI-classicAPI](https://github.com/roby-brok/pfUI-classicAPI).
 
 ## Optional DLL Enhancements
 
@@ -1714,14 +1746,16 @@ big fan of creating configuration UI's, especially not via the Wow-API
 You can donate via [GitHub](https://github.com/sponsors/shagu) or [Ko-fi](https://ko-fi.com/shagu)
 
 **How do I report a Bug?**  
-Please provide as much information as possible in the [Bugtracker](https://github.com/me0wg4ming/pfUI/issues).
+Please provide as much information as possible in the [Bugtracker](https://github.com/roby-brok/pfUI/issues).
+If the problem is not something this fork changed, [Shagu's tracker](https://github.com/shagu/pfUI/issues)
+is the better place — this fork's issue list is only for what is listed at the top of this file.
 If there is an error message, provide the full content of it. Just telling that "there is an error" won't help any of us.
 Please consider adding additional information such as: since when did you got the error,
 does it still happen using a clean configuration, what other addons are loaded and which version you're running.
 When playing with a non-english client, the language might be relevant too. If possible, explain how people can reproduce the issue.
 
 **How can I contribute?**
-Report errors and issues in the [Bugtracker](https://github.com/me0wg4ming/pfUI/issues).
+Report errors and issues in the [Bugtracker](https://github.com/roby-brok/pfUI/issues).
 Please make sure to have the latest version installed and check for conflicting addons beforehand.
 
 **I have bad performance, what can I do?**  
@@ -1729,7 +1763,7 @@ Version 6.0.0 includes significant performance optimizations. If you still exper
 1. Disable "Frame Shadows" in Settings → Appearance → Enable Frame Shadows
 2. Check `/pfdll` to see which DLLs are active (some features require DLLs)
 3. Disable all AddOns but pfUI and enable one-by-one to identify conflicts
-4. Report issues via the [Bugtracker](https://github.com/me0wg4ming/pfUI/issues)
+4. Report issues via the [Bugtracker](https://github.com/roby-brok/pfUI/issues)
 
 **Where is the happiness indicator for pets?**  
 The pet happiness is shown as the color of your pet's frame. Depending on your skin, this can either be the text or the background color of your pet's healthbar:
