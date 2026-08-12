@@ -62,6 +62,9 @@
 > - Plus an earlier batch of fixes across the stutter-prone hot paths (nameplate debuff scanning,
 >   unit-frame aggro checks, throttle allocations, cooldown updates), a number of silently broken
 >   features, and a class-colour accent option.
+> - `modules/thirdparty-vanilla.lua` — [OWThreat](https://github.com/roby-brok/OWThreat) now docks
+>   into the right chat panel and takes the pfUI skin, exactly like the TWThreat it was forked
+>   from; both are driven by the same *TW/OW Threatmeter* checkboxes under *Thirdparty*.
 >
 > ---
 

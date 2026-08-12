@@ -232,6 +232,81 @@ pfUI:RegisterModule("thirdparty-vanilla", "vanilla", function()
     end
   end)
 
+  -- OWThreat is TWThreat renamed (OWT* globals, OWT_CONFIG), so the stock hook
+  -- above never fires for it; same dock and skin, sharing the twt config keys.
+  HookAddonOrVariable("OWThreat", function()
+    local docktable = { "twt", "OWThreat", "OWTMain",
+      function() -- single
+        OWTMain:ClearAllPoints()
+        OWTMain:SetPoint("TOPLEFT", pfUI.chat.right, "TOPLEFT", 0, 0)
+        local width = pfUI.chat.right:GetWidth() - 3
+        OWTMain:SetScale(width / OWTMain:GetWidth())
+        OWTMainSettingsFrameHeightSlider:SetMinMaxValues(15, 30)
+        OWTMainSettingsFrameHeightSlider:SetValue(15)
+        OWT_CONFIG.windowScale = width / OWTMain:GetWidth()
+        OWTMain:SetHeight(pfUI.chat.right:GetHeight() / OWT_CONFIG.windowScale - OWT_CONFIG.barHeight)
+        OWTMainMainWindow_Resized()
+      end,
+      function() -- dual
+        OWTMain:ClearAllPoints()
+        OWTMain:SetPoint("TOPLEFT", pfUI.chat.right, "TOPLEFT", 0, 0)
+        local width = (pfUI.chat.right:GetWidth() - 3) / 2
+        OWTMain:SetScale(width / OWTMain:GetWidth())
+        OWT_CONFIG.windowScale = width / OWTMain:GetWidth()
+        OWTMain:SetHeight(pfUI.chat.right:GetHeight() / OWT_CONFIG.windowScale - OWT_CONFIG.barHeight)
+        OWTMainMainWindow_Resized()
+      end,
+      function() -- show
+        OWTMain:Show()
+      end,
+      function() -- hide
+        OWTMain:Hide()
+      end,
+      function() -- once
+        return
+      end
+    }
+
+    pfUI.thirdparty.meters:RegisterMeter("threat", docktable)
+
+    if C.thirdparty.twt.skin == "1" then
+      CreateBackdrop(OWTMain, nil, nil, (C.thirdparty.chatbg == "1" and .8))
+      CreateBackdropShadow(OWTMain)
+
+      if C.thirdparty.chatbg == "1" and C.chat.global.custombg == "1" then
+        local r, g, b, a = strsplit(",", C.chat.global.background)
+        OWTMain.backdrop:SetBackdropColor(tonumber(r), tonumber(g), tonumber(b), tonumber(a))
+
+        local r, g, b, a = strsplit(",", C.chat.global.border)
+        OWTMain.backdrop:SetBackdropBorderColor(tonumber(r), tonumber(g), tonumber(b), tonumber(a))
+      end
+
+      OWTMainTitleBG:Hide()
+      OWTMainBarsBG:Hide()
+
+      -- theme buttons
+      local buttons = { "OWTMainSettingsButton", "OWTMainLockButton", "OWTMainCloseButton" }
+
+      for i, button in pairs(buttons) do
+        local b = _G[button]
+        if not b then return end
+        SkinButton(b)
+
+
+        local p,rt,rp,xo,yo = b:GetPoint()
+        if not b.pfSet then
+          b:SetPoint(p,rt,rp,xo - 5,yo)
+          b.pfSet = true
+        end
+      end
+
+      -- buttons
+      OWTMainSettingsButton:SetText("O")
+      OWTMainLockButton:SetText("L")
+      OWTMainCloseButton:SetText("X")
+    end
+  end)
+
   HookAddonOrVariable("SW_Stats", function()
     local docktable = { "swstats", "TODO", "SW_BarFrame1",
       function() -- single
