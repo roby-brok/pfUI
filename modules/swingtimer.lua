@@ -31,6 +31,8 @@ pfUI:RegisterModule("swingtimer", "vanilla:tbc", function ()
     useSpellQueueEvent = false,
     playerGUID = nil,
     swingThrottle = 0,
+    mhLastSwingAt = 0, ohLastSwingAt = 0,
+    procSpells = {}, lastSpellResetId = nil, lastSpellResetAt = nil,
     onSwingCache = {},
   }
 
@@ -341,6 +343,31 @@ pfUI:RegisterModule("swingtimer", "vanilla:tbc", function ()
     S.raSpeed = (rs and rs > 0) and rs or 0
   end
 
+  -- Haste changes mid-swing (Flurry proc/expiry, haste procs) rescale the
+  -- server's remaining swing time proportionally -- mirror that on the live
+  -- timers or the bar drifts against the true swing. UNIT_ATTACK_SPEED never
+  -- fires for the player on this client and the field lags a packet at haste
+  -- edges, so this is polled from the throttled OnUpdate instead.
+  local function RescaleTimers()
+    local oldMH, oldOH = S.mhSpeed, S.ohSpeed
+    UpdateWeaponSpeeds()
+    local mhChanged = S.mhSpeed > 0 and oldMH > 0 and abs(S.mhSpeed - oldMH) > 0.001
+    local ohChanged = S.ohSpeed > 0 and oldOH > 0 and abs(S.ohSpeed - oldOH) > 0.001
+    if S.mhActive and mhChanged then
+      local ratio = S.mhSpeed / oldMH
+      S.mhTimer    = S.mhTimer * ratio
+      S.mhTimerMax = S.mhTimerMax * ratio
+    end
+    if S.ohActive and ohChanged then
+      local ratio = S.ohSpeed / oldOH
+      S.ohTimer    = S.ohTimer * ratio
+      S.ohTimerMax = S.ohTimerMax * ratio
+    end
+    if pfSwingDebug and (mhChanged or ohChanged) then
+      DEFAULT_CHAT_FRAME:AddMessage(string.format("swt: rescale MH %.2f>%.2f OH %.2f>%.2f", oldMH, S.mhSpeed, oldOH, S.ohSpeed))
+    end
+  end
+
   -- Reset MH countdown to full speed (server confirmed swing)
   local function ResetMH()
     if S.mhFrozenAt then
@@ -464,6 +491,9 @@ pfUI:RegisterModule("swingtimer", "vanilla:tbc", function ()
     if S.swingThrottle < swingDelay then return end
     local delta = S.swingThrottle
     S.swingThrottle = 0
+
+    -- Poll for attack-speed changes on the tick (see RescaleTimers).
+    RescaleTimers()
 
     -- (out-of-combat hide handled naturally when timers expire)
 
@@ -749,19 +779,39 @@ pfUI:RegisterModule("swingtimer", "vanilla:tbc", function ()
     elseif hsSpellIDs[spellId] or cleaveSpellIDs[spellId] or maulSpellIDs[spellId] or raptorSpellIDs[spellId] or IsOnSwingSpell(spellId) then
       S.hsQueued = false; S.cleaveQueued = false
       S.maulQueued = false; S.raptorQueued = false
+      -- this IS the real swing: stamp the clock so its echoes are eaten
+      S.mhLastSwingAt = GetTime()
       ResetMH()
-    elseif cleaveSpellIDs[spellId] then
-      S.hsQueued = false; S.cleaveQueued = false
-      ResetMH()
+      if pfSwingDebug then DEFAULT_CHAT_FRAME:AddMessage("swt: on-swing reset id="..tostring(spellId)) end
     else
       -- Any spell with interruptFlags > 0 resets the swing timer
-      -- (Moonfire, Faerie Fire, Wrath, Starfire etc. - NOT Insect Swarm which has flags=0)
+      -- (Moonfire, Faerie Fire, Wrath, Starfire etc. - NOT Insect Swarm which has flags=0).
+      -- Chance-on-hit procs (Lightning Strike 16614 etc.) carry those flags
+      -- too but are cast BY a swing that already advanced the clock; their
+      -- SPELL_GO precedes the triggering AUTO_ATTACK event, so the accept
+      -- path LEARNS them: a swing landing on the old schedule right after
+      -- this re-arm blacklists the id for the session.
       local _rec = GetSpellRec(spellId)
       if _rec and _rec.interruptFlags and _rec.interruptFlags > 0 then
-        if S.mhActive and S.mhSpeed > 0 then
-          UpdateWeaponSpeeds()
-          S.mhTimerMax = S.mhSpeed
-          S.mhTimer    = S.mhSpeed
+        local now = GetTime()
+        if S.procSpells[spellId] then
+          if pfSwingDebug then DEFAULT_CHAT_FRAME:AddMessage("swt: swing-reset skipped (proc) id="..tostring(spellId)) end
+        else
+          local last = S.mhLastSwingAt
+          if S.ohLastSwingAt > last then last = S.ohLastSwingAt end
+          if now - last < 0.3 then
+            S.procSpells[spellId] = true
+            if pfSwingDebug then DEFAULT_CHAT_FRAME:AddMessage("swt: learned proc id="..tostring(spellId).." (swing-adjacent)") end
+          else
+            if S.mhActive and S.mhSpeed > 0 then
+              UpdateWeaponSpeeds()
+              S.mhTimerMax = S.mhSpeed
+              S.mhTimer    = S.mhSpeed
+            end
+            S.lastSpellResetId = spellId
+            S.lastSpellResetAt = now
+            if pfSwingDebug then DEFAULT_CHAT_FRAME:AddMessage("swt: spell swing-reset id="..tostring(spellId)) end
+          end
         end
       end
     end
@@ -795,6 +845,8 @@ pfUI:RegisterModule("swingtimer", "vanilla:tbc", function ()
   events:RegisterEvent("SPELL_QUEUE_EVENT")
   events:RegisterEvent("START_AUTOATTACK")
   events:RegisterEvent("STOP_AUTOATTACK")
+  events:RegisterEvent("PLAYER_ENTER_COMBAT")
+  events:RegisterEvent("PLAYER_LEAVE_COMBAT")
 
   events:SetScript("OnEvent", function()
     if event == "AUTO_ATTACK_SELF" then
@@ -809,22 +861,44 @@ pfUI:RegisterModule("swingtimer", "vanilla:tbc", function ()
         if not isOffhand and S.mhActive then return end
       end
 
-      -- Extra attack detection: if timer still has >20% remaining for that hand,
-      -- the server did NOT reset the swing clock -> this is an extra attack, skip.
-      -- Use 20% here (SP_SwingTimer's ShouldResetTimer threshold).
-      -- Exception: if timer is already at 0 (expired), always accept.
+      -- Extra attack detection, time-based. Event echoes (this stack fires
+      -- AUTO_ATTACK_SELF 2-3x per swing) and Windfury-class extra attacks
+      -- land within a fraction of a period after the last REAL swing. A
+      -- real swing arriving with a nearly-full bar instead means something
+      -- re-armed the bar wrongly -- accept it so the bar resyncs within one
+      -- swing. A fill-percent guard cannot tell those apart; time since the
+      -- last accepted swing can. `/run pfSwingDebug=1` traces decisions.
+      local now = GetTime()
       if isOffhand then
         local pct = S.ohActive and (S.ohTimer / S.ohTimerMax) or 0
-        if S.ohActive and S.ohTimer > 0 and pct > 0.20 then
+        if S.ohActive and S.ohTimer > 0 and pct > 0.75
+          and (now - S.ohLastSwingAt) < S.ohTimerMax * 0.5 then
+          if pfSwingDebug then DEFAULT_CHAT_FRAME:AddMessage("swt: OH skip (echo/extra) rem="..floor(pct*100).."%") end
           return
         end
+        if S.lastSpellResetAt and pct > 0.75 and (now - S.lastSpellResetAt) < 0.4 then
+          S.procSpells[S.lastSpellResetId] = true
+          if pfSwingDebug then DEFAULT_CHAT_FRAME:AddMessage("swt: learned proc id="..tostring(S.lastSpellResetId)) end
+          S.lastSpellResetAt = nil
+        end
+        S.ohLastSwingAt = now
         ResetOH()
+        if pfSwingDebug then DEFAULT_CHAT_FRAME:AddMessage(string.format("swt: OH reset armed=%.2f landed=%d%%", S.ohTimerMax, pct*100)) end
       else
         local pct = S.mhActive and (S.mhTimer / S.mhTimerMax) or 0
-        if S.mhActive and S.mhTimer > 0 and pct > 0.20 then
+        if S.mhActive and S.mhTimer > 0 and pct > 0.75
+          and (now - S.mhLastSwingAt) < S.mhTimerMax * 0.5 then
+          if pfSwingDebug then DEFAULT_CHAT_FRAME:AddMessage("swt: MH skip (echo/extra) rem="..floor(pct*100).."%") end
           return
         end
+        if S.lastSpellResetAt and pct > 0.75 and (now - S.lastSpellResetAt) < 0.4 then
+          S.procSpells[S.lastSpellResetId] = true
+          if pfSwingDebug then DEFAULT_CHAT_FRAME:AddMessage("swt: learned proc id="..tostring(S.lastSpellResetId)) end
+          S.lastSpellResetAt = nil
+        end
+        S.mhLastSwingAt = now
         ResetMH()
+        if pfSwingDebug then DEFAULT_CHAT_FRAME:AddMessage(string.format("swt: MH reset armed=%.2f landed=%d%%", S.mhTimerMax, pct*100)) end
       end
 
     elseif event == "AUTO_ATTACK_OTHER" then
@@ -876,10 +950,13 @@ pfUI:RegisterModule("swingtimer", "vanilla:tbc", function ()
         S.hsQueued = false; S.cleaveQueued = false; S.maulQueued = false; S.raptorQueued = false
       end
 
-    elseif event == "START_AUTOATTACK" then
+    elseif event == "START_AUTOATTACK" or event == "PLAYER_ENTER_COMBAT" then
+      -- PLAYER_ENTER_COMBAT is the vanilla auto-attack-toggled-on event and
+      -- the reliable one here (START_AUTOATTACK exists in no DLL on this
+      -- stack); it re-fires on EVERY attack command, so it only tracks state.
       S.autoAttackActive = true
 
-    elseif event == "STOP_AUTOATTACK" then
+    elseif event == "STOP_AUTOATTACK" or event == "PLAYER_LEAVE_COMBAT" then
       S.autoAttackActive = false
 
     elseif event == "PLAYER_ENTERING_WORLD" then
