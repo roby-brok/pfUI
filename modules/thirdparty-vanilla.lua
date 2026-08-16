@@ -881,6 +881,14 @@ pfUI:RegisterModule("thirdparty-vanilla", "vanilla", function()
     sort:SetScript("OnEvent", function()
       this:UnregisterAllEvents()
 
+      -- Only hand the button over if this addon actually provides the sorter.
+      -- HookAddonOrVariable fires on the folder loading (or any global of that
+      -- name), not on SortBags() existing, so a build that names its entry
+      -- point differently used to rebind pfUI's button to a nil global --
+      -- "attempt to call global 'SortBags' (a nil value)" on every click.
+      -- Bailing here leaves pfUI's own libbagsort sorter bound, which works.
+      if type(SortBags) ~= "function" then return end
+
       pfUI.thirdparty.RegisterBagSort("SortBags",
         function()
           SortBags()
